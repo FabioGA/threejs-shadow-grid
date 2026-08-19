@@ -10,7 +10,7 @@ It's framework-agnostic - a plain TypeScript class with no React/Vue/etc depende
 - Works as a full-page fixed background or as a smaller contained box; either way the grid stays full-bleed while page/container content scrolls over it.
 - Mouse-driven shadow: a single directional light follows the pointer. On touch devices (or before the first pointer move) it drifts naturally between randomized waypoints (speed configurable) instead of sitting static or looping a fixed path.
 - Three simplified light presets (`soft` / `medium` / `hard`) so you never have to touch raw Three.js lighting values.
-- Rubber-like material (near-zero metalness, high roughness, plus a soft clearcoat layer) so objects read as a real matte surface with a subtle highlight, not flat plastic/metal or chalky matte.
+- Physically-based material from soft matte rubber to hard, glossy, and reflective, dialed with a single `hardness` knob.
 - Grid or randomized (jittered position) arrangement, plus independent rotation and size controls (fixed or randomized).
 - Single color, or a palette that's randomly assigned per object.
 - Loads one or more STL files; each grid cell randomly picks one when you pass several.
@@ -100,6 +100,7 @@ function ShadowGridBackground(props: GridConfig) {
 | `overscan` | `number` (0-1) | `0.15` | Extra rows/columns rendered past the edges, to avoid pop-in. Rarely needs changing. |
 | `maxInstances` | `number` | `4000` | Safety cap on total rendered objects (perf guard for very small cell sizes / huge containers). |
 | `colors` | `string \| string[] \| { color, weight }[]` | `"#c9ccd6"` | A single CSS color applies to every object. A plain array (e.g. `["#ff4d4d", "#4d79ff"]`) makes each object independently pick one color at random with equal odds. An array of `{ color, weight }` instead partitions the *exact* current instance count proportionally to weight (e.g. weights 70/30 -> ~70%/30% split, not just a 70/30 chance per object) - see "Weighted palettes" below. Ignored if `matchBackground` is `true`. |
+| `hardness` | `number` (0-1) | `0` | Object surface hardness/reflectivity - `0` is soft matte rubber, `1` is hard, glossy, and more reflective. Continuously blends roughness, metalness, and clearcoat. |
 | `backgroundColor` | `string \| "transparent"` | `"#0a0a0f"` | `"transparent"` lets the page background show through (objects then only shadow each other slightly, since there's no backdrop to catch shadows). |
 | `matchBackground` | `boolean` | `false` | When `true`, forces object color to exactly match `backgroundColor` (ignoring `colors`), so objects are only revealed by their cast shadows. No effect if `backgroundColor` is `"transparent"`. |
 | `seed` | `number` | fixed internal default | Seeds the "random" choices (arrangement jitter, palette pick, model pick) so results are reproducible instead of using `Math.random()`. |

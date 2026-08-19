@@ -181,6 +181,13 @@ export interface GridConfig {
 
   // ---- Appearance --------------------------------------------------------
   colors?: ColorConfig;
+  /**
+   * Surface hardness/reflectivity of objects, 0 (soft matte rubber, the
+   * default) to 1 (hard, glossy, more reflective) - continuously blends
+   * roughness, metalness, and clearcoat so higher values pick up sharper,
+   * brighter highlights from the light. Default: 0.
+   */
+  hardness?: number;
   /** CSS color, or "transparent" to let the page background show through. Default: "#0a0a0f". */
   backgroundColor?: string;
   /**

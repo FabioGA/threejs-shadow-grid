@@ -378,6 +378,11 @@
                 <input type="checkbox" id="matchBackground" />
               </div>
               <div class="field">
+                <label for="hardness">hardness</label>
+                <input type="range" id="hardness" min="0" max="1" step="0.05" value="0" />
+                <span class="val" id="hardness-val">0.00</span>
+              </div>
+              <div class="field">
                 <label for="shadows">shadows</label>
                 <input type="checkbox" id="shadows" checked />
               </div>
@@ -525,6 +530,7 @@
         backgroundColor: "#12121a",
         backgroundTransparent: false,
         matchBackground: false,
+        hardness: 0,
         shadows: true,
         maxPixelRatio: 2,
         seed: 1337,
@@ -567,6 +573,7 @@
               : s.colorSingle,
           backgroundColor: s.backgroundTransparent ? "transparent" : s.backgroundColor,
           matchBackground: s.matchBackground,
+          hardness: s.hardness,
           seed: s.seed,
           light: {
             style: s.lightStyle,
@@ -612,6 +619,7 @@ const grid = new ShadowGrid({
   colors: ${colors},
   backgroundColor: ${backgroundColor},
   matchBackground: ${s.matchBackground},
+  hardness: ${s.hardness},
   seed: ${s.seed},
   light: {
     style: "${s.lightStyle}",
@@ -744,6 +752,7 @@ const grid = new ShadowGrid({
       bindColor("backgroundColor", "backgroundColor");
       bindCheckbox("backgroundTransparent", "backgroundTransparent");
       bindCheckbox("matchBackground", "matchBackground");
+      bindRange("hardness", "hardness", (v) => v.toFixed(2));
       bindCheckbox("shadows", "shadows");
       bindRange("maxPixelRatio", "maxPixelRatio", (v) => v.toFixed(1));
 

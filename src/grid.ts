@@ -1,9 +1,13 @@
 import * as THREE from "three";
 import {
-  OBJECT_MATERIAL_CLEARCOAT,
-  OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS,
-  OBJECT_MATERIAL_METALNESS,
-  OBJECT_MATERIAL_ROUGHNESS,
+  OBJECT_MATERIAL_CLEARCOAT_HARD,
+  OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_HARD,
+  OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_SOFT,
+  OBJECT_MATERIAL_CLEARCOAT_SOFT,
+  OBJECT_MATERIAL_METALNESS_HARD,
+  OBJECT_MATERIAL_METALNESS_SOFT,
+  OBJECT_MATERIAL_ROUGHNESS_HARD,
+  OBJECT_MATERIAL_ROUGHNESS_SOFT,
   PIXELS_PER_UNIT,
 } from "./defaults";
 import { createColorPicker } from "./colors";
@@ -47,23 +51,39 @@ export class GridBuilder {
     this.geometries = geometries;
     // One shared material per model (per-instance color comes from the
     // InstancedMesh color buffer, so all instances of a model share one
-    // material instance regardless of their individual color).
+    // material instance regardless of their individual color). Actual
+    // roughness/metalness/clearcoat are set from `hardness` in rebuild()
+    // below, so they stay in sync with config changes that don't reload
+    // models (materials persist across rebuilds, only geometry does not).
     this.materials.forEach((m) => m.dispose());
-    this.materials = geometries.map(
-      () =>
-        new THREE.MeshPhysicalMaterial({
-          roughness: OBJECT_MATERIAL_ROUGHNESS,
-          metalness: OBJECT_MATERIAL_METALNESS,
-          clearcoat: OBJECT_MATERIAL_CLEARCOAT,
-          clearcoatRoughness: OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS,
-        })
+    this.materials = geometries.map(() => new THREE.MeshPhysicalMaterial());
+  }
+
+  /** Applies the current `hardness` (0 = soft rubber, 1 = hard/glossy) to all materials in place. */
+  private applyHardness(hardness: number) {
+    const t = THREE.MathUtils.clamp(hardness, 0, 1);
+    const roughness = THREE.MathUtils.lerp(OBJECT_MATERIAL_ROUGHNESS_SOFT, OBJECT_MATERIAL_ROUGHNESS_HARD, t);
+    const metalness = THREE.MathUtils.lerp(OBJECT_MATERIAL_METALNESS_SOFT, OBJECT_MATERIAL_METALNESS_HARD, t);
+    const clearcoat = THREE.MathUtils.lerp(OBJECT_MATERIAL_CLEARCOAT_SOFT, OBJECT_MATERIAL_CLEARCOAT_HARD, t);
+    const clearcoatRoughness = THREE.MathUtils.lerp(
+      OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_SOFT,
+      OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_HARD,
+      t
     );
+    for (const material of this.materials) {
+      material.roughness = roughness;
+      material.metalness = metalness;
+      material.clearcoat = clearcoat;
+      material.clearcoatRoughness = clearcoatRoughness;
+    }
   }
 
   /** viewportWidth/Height are in world units (Three.js units), not pixels. */
   rebuild(viewportWidthUnits: number, viewportHeightUnits: number, config: ResolvedGridConfig) {
     this.clearMeshes();
     if (this.geometries.length === 0) return;
+
+    this.applyHardness(config.hardness);
 
     const cellSizeUnits = config.cellSize / PIXELS_PER_UNIT;
     const overscanCells = Math.max(0, Math.round(config.overscan * 4));

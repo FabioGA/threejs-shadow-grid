@@ -19,18 +19,24 @@ export const DEFAULT_SEED = 1337;
 export const DEFAULT_MAX_PIXEL_RATIO = 2;
 export const DEFAULT_SHADOWS = true;
 
+export const DEFAULT_HARDNESS = 0;
+
 /**
- * Rubber-like material tuning for grid objects: near-zero metalness and
- * high roughness keep the bulk surface matte and non-metallic, while a
- * soft clearcoat layer adds the subtle, tight specular highlight rubber
- * (and matte plastic) gets from its thin glossy microsurface even though
- * the material underneath is diffuse - the detail that reads as "real"
- * rather than a flat, chalky matte.
+ * Rubber-like-to-glossy material tuning for grid objects: `hardness` (see
+ * GridConfig) linearly blends roughness/metalness/clearcoat between these
+ * "soft" (hardness 0, the default - a matte rubber look with near-zero
+ * metalness and a soft clearcoat sheen) and "hard" (hardness 1 - smoother,
+ * more metallic, with a sharper clearcoat) endpoints, so objects can read
+ * anywhere from soft rubber to a hard, glossy, reflective surface.
  */
-export const OBJECT_MATERIAL_ROUGHNESS = 0.9;
-export const OBJECT_MATERIAL_METALNESS = 0;
-export const OBJECT_MATERIAL_CLEARCOAT = 0.4;
-export const OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS = 0.35;
+export const OBJECT_MATERIAL_ROUGHNESS_SOFT = 0.9;
+export const OBJECT_MATERIAL_ROUGHNESS_HARD = 0.15;
+export const OBJECT_MATERIAL_METALNESS_SOFT = 0;
+export const OBJECT_MATERIAL_METALNESS_HARD = 0.6;
+export const OBJECT_MATERIAL_CLEARCOAT_SOFT = 0.4;
+export const OBJECT_MATERIAL_CLEARCOAT_HARD = 0.9;
+export const OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_SOFT = 0.35;
+export const OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_HARD = 0.05;
 
 /**
  * Maps friendly light "style" presets to concrete Three.js-ish values.
