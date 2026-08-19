@@ -131,6 +131,16 @@ light: {
 
 The light starts in "auto sweep" mode and switches to following the pointer the moment it detects real pointer movement (mouse, pen, or a touch drag); moving the pointer off the container drops back to sweeping rather than freezing the shadow in its last spot. That also means touch-only visitors - who typically never fire a hover-style pointer move - simply get the sweep the whole time. The sweep drifts toward a new randomized waypoint every couple of seconds (eased, not snapped), so it reads as organic movement rather than a fixed circular/repeating path; `sweepSpeed` controls how often those waypoints change.
 
+## Interactive playground
+
+`examples/demo.html` includes a collapsible "Config playground" panel (top-right) exposing every option in the table above as a live control, plus a generated-code panel that always mirrors the current state - tweak values, watch the background update, then copy the exact `ShadowGrid` config to paste into your own project. To run it locally:
+
+```bash
+npm run build   # or npm run dev, in a separate terminal, to rebuild on change
+npx http-server . -p 8080   # any static file server serving the repo root works
+# open http://localhost:8080/examples/demo.html
+```
+
 ## Getting STL models
 
 Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thingiverse.com), [Printables](https://www.printables.com), or exporting a simple shape from Blender/Figma-to-3D tools. Keep files small (a few hundred KB) since they load in the browser - decimate/simplify highly detailed prints before using them as a tiled background element.
