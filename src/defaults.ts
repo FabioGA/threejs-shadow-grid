@@ -20,13 +20,17 @@ export const DEFAULT_MAX_PIXEL_RATIO = 2;
 export const DEFAULT_SHADOWS = true;
 
 /**
- * Matte, physically-based material tuning for grid objects: near-zero
- * metalness and high roughness so objects read as a flat, non-reflective
- * matte color rather than plastic/metal, while still using Three's PBR
- * (physically based) shading model.
+ * Rubber-like material tuning for grid objects: near-zero metalness and
+ * high roughness keep the bulk surface matte and non-metallic, while a
+ * soft clearcoat layer adds the subtle, tight specular highlight rubber
+ * (and matte plastic) gets from its thin glossy microsurface even though
+ * the material underneath is diffuse - the detail that reads as "real"
+ * rather than a flat, chalky matte.
  */
-export const OBJECT_MATERIAL_ROUGHNESS = 0.92;
+export const OBJECT_MATERIAL_ROUGHNESS = 0.9;
 export const OBJECT_MATERIAL_METALNESS = 0;
+export const OBJECT_MATERIAL_CLEARCOAT = 0.4;
+export const OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS = 0.35;
 
 /**
  * Maps friendly light "style" presets to concrete Three.js-ish values.

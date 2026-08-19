@@ -10,7 +10,7 @@ It's framework-agnostic - a plain TypeScript class with no React/Vue/etc depende
 - Works as a full-page fixed background or as a smaller contained box; either way the grid stays full-bleed while page/container content scrolls over it.
 - Mouse-driven shadow: a single directional light follows the pointer. On touch devices (or before the first pointer move) it drifts naturally between randomized waypoints (speed configurable) instead of sitting static or looping a fixed path.
 - Three simplified light presets (`soft` / `medium` / `hard`) so you never have to touch raw Three.js lighting values.
-- Matte, physically-based material (near-zero metalness, high roughness) so objects read as flat color, not plastic/metal.
+- Rubber-like material (near-zero metalness, high roughness, plus a soft clearcoat layer) so objects read as a real matte surface with a subtle highlight, not flat plastic/metal or chalky matte.
 - Grid or randomized (jittered position) arrangement, plus independent rotation and size controls (fixed or randomized).
 - Single color, or a palette that's randomly assigned per object.
 - Loads one or more STL files; each grid cell randomly picks one when you pass several.

@@ -1,5 +1,11 @@
 import * as THREE from "three";
-import { OBJECT_MATERIAL_METALNESS, OBJECT_MATERIAL_ROUGHNESS, PIXELS_PER_UNIT } from "./defaults";
+import {
+  OBJECT_MATERIAL_CLEARCOAT,
+  OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS,
+  OBJECT_MATERIAL_METALNESS,
+  OBJECT_MATERIAL_ROUGHNESS,
+  PIXELS_PER_UNIT,
+} from "./defaults";
 import { createColorPicker } from "./colors";
 import { createRng } from "./random";
 import { maxObjectSize } from "./resolveConfig";
@@ -30,7 +36,7 @@ function axisRotationRadians(axis: AxisRotation, rng: () => number): number {
 export class GridBuilder {
   private scene: THREE.Scene;
   private meshes: THREE.InstancedMesh[] = [];
-  private materials: THREE.MeshStandardMaterial[] = [];
+  private materials: THREE.MeshPhysicalMaterial[] = [];
   private geometries: THREE.BufferGeometry[] = [];
 
   constructor(scene: THREE.Scene) {
@@ -45,9 +51,11 @@ export class GridBuilder {
     this.materials.forEach((m) => m.dispose());
     this.materials = geometries.map(
       () =>
-        new THREE.MeshStandardMaterial({
+        new THREE.MeshPhysicalMaterial({
           roughness: OBJECT_MATERIAL_ROUGHNESS,
           metalness: OBJECT_MATERIAL_METALNESS,
+          clearcoat: OBJECT_MATERIAL_CLEARCOAT,
+          clearcoatRoughness: OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS,
         })
     );
   }
