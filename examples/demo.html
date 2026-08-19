@@ -176,6 +176,7 @@
       .subgroup.active { display: block; }
       .palette-row { display: flex; align-items: center; gap: 6px; }
       .palette-row input[type="color"] { flex: none; }
+      .palette-row input.weight { width: 4.2em; }
 
       .code-panel { display: flex; flex-direction: column; min-height: 260px; }
       .code-header {
@@ -349,10 +350,19 @@
               </div>
               <div class="subgroup" id="colors-palette-group">
                 <div class="field palette-row">
-                  <label>palette</label>
+                  <label>color / weight</label>
                   <input type="color" id="colorPalette0" value="#8fb8ff" />
+                  <input type="number" class="weight" id="colorWeight0" min="0" step="1" value="50" />
+                </div>
+                <div class="field palette-row">
+                  <label></label>
                   <input type="color" id="colorPalette1" value="#c58fff" />
+                  <input type="number" class="weight" id="colorWeight1" min="0" step="1" value="30" />
+                </div>
+                <div class="field palette-row">
+                  <label></label>
                   <input type="color" id="colorPalette2" value="#8fffc8" />
+                  <input type="number" class="weight" id="colorWeight2" min="0" step="1" value="20" />
                 </div>
               </div>
               <div class="field">
@@ -502,6 +512,7 @@
         colorsMode: "single",
         colorSingle: "#8fb8ff",
         colorPalette: ["#8fb8ff", "#c58fff", "#8fffc8"],
+        colorWeights: [50, 30, 20],
         backgroundColor: "#12121a",
         backgroundTransparent: false,
         matchBackground: false,
@@ -515,7 +526,11 @@
         ambient: 0.45,
         easing: 4,
       };
-      const state = { ...defaultState, colorPalette: [...defaultState.colorPalette] };
+      const state = {
+        ...defaultState,
+        colorPalette: [...defaultState.colorPalette],
+        colorWeights: [...defaultState.colorWeights],
+      };
 
       function axisRotationValue(mode, deg) {
         return mode === "random" ? "random" : deg;
@@ -535,7 +550,10 @@
           },
           overscan: s.overscan,
           maxInstances: s.maxInstances,
-          colors: s.colorsMode === "palette" ? [...s.colorPalette] : s.colorSingle,
+          colors:
+            s.colorsMode === "palette"
+              ? s.colorPalette.map((color, i) => ({ color, weight: s.colorWeights[i] }))
+              : s.colorSingle,
           backgroundColor: s.backgroundTransparent ? "transparent" : s.backgroundColor,
           matchBackground: s.matchBackground,
           seed: s.seed,
@@ -559,7 +577,11 @@
         const axisCode = (mode, deg) => (mode === "random" ? '"random"' : `${deg}`);
         const rotation = `{ x: ${axisCode(s.rotationXMode, s.rotationXDeg)}, y: ${axisCode(s.rotationYMode, s.rotationYDeg)}, z: ${axisCode(s.rotationZMode, s.rotationZDeg)} }`;
         const colors =
-          s.colorsMode === "palette" ? `[${s.colorPalette.map((c) => `"${c}"`).join(", ")}]` : `"${s.colorSingle}"`;
+          s.colorsMode === "palette"
+            ? `[\n${s.colorPalette
+                .map((c, i) => `    { color: "${c}", weight: ${s.colorWeights[i]} },`)
+                .join("\n")}\n  ]`
+            : `"${s.colorSingle}"`;
         const backgroundColor = s.backgroundTransparent ? '"transparent"' : `"${s.backgroundColor}"`;
 
         return `import { ShadowGrid } from "threejs-shadow-grid";
@@ -696,6 +718,14 @@ const grid = new ShadowGrid({
           scheduleApply();
         });
       });
+      ["colorWeight0", "colorWeight1", "colorWeight2"].forEach((id, i) => {
+        document.getElementById(id).addEventListener("input", (e) => {
+          const value = Number(e.target.value);
+          if (Number.isNaN(value)) return;
+          state.colorWeights[i] = value;
+          scheduleApply();
+        });
+      });
       bindColor("backgroundColor", "backgroundColor");
       bindCheckbox("backgroundTransparent", "backgroundTransparent");
       bindCheckbox("matchBackground", "matchBackground");
@@ -721,7 +751,10 @@ const grid = new ShadowGrid({
       });
 
       document.getElementById("reset-btn").addEventListener("click", () => {
-        Object.assign(state, defaultState, { colorPalette: [...defaultState.colorPalette] });
+        Object.assign(state, defaultState, {
+          colorPalette: [...defaultState.colorPalette],
+          colorWeights: [...defaultState.colorWeights],
+        });
         document.querySelectorAll("#playground-panel input, #playground-panel select").forEach((el) => {
           const key = el.id in state ? el.id : null;
           if (!key) return;
@@ -730,6 +763,9 @@ const grid = new ShadowGrid({
         });
         ["colorPalette0", "colorPalette1", "colorPalette2"].forEach((id, i) => {
           document.getElementById(id).value = state.colorPalette[i];
+        });
+        ["colorWeight0", "colorWeight1", "colorWeight2"].forEach((id, i) => {
+          document.getElementById(id).value = state.colorWeights[i];
         });
         toggleSubgroup(state.objectSizeMode, "fixed", "objectSize-fixed-group", "objectSize-range-group");
         ["X", "Y", "Z"].forEach((axis) => {

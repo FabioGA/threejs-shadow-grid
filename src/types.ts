@@ -83,15 +83,35 @@ export interface LightConfig {
   easing?: number;
 }
 
+/** One entry in a weighted color palette - see `ColorConfig`. */
+export interface WeightedColor {
+  /** CSS color string. */
+  color: string;
+  /**
+   * Relative weight controlling what share of objects get this color.
+   * Weights don't need to add up to any particular total - e.g. 50/30/20
+   * reads naturally as percentages, or set weights equal to the exact
+   * instance counts you want if you know your grid's total instance count
+   * (visible in the generated code in the demo playground, or computable
+   * as roughly `(width / cellSize) * (height / cellSize)`).
+   */
+  weight: number;
+}
+
 /**
  * Color configuration for the rendered objects.
  *
  * - A single CSS color string -> every object uses that color.
  * - An array of CSS color strings -> each object instance randomly picks
- *   one color from the array (a deterministic seed can be supplied so the
- *   "random" choice is stable across re-renders / SSR hydration).
+ *   one color from the array with equal probability (a deterministic seed
+ *   can be supplied so the "random" choice is stable across re-renders /
+ *   SSR hydration).
+ * - An array of `{ color, weight }` -> like above, but each render's exact
+ *   instance count is partitioned across colors proportionally to weight
+ *   (then shuffled), so e.g. weights of 70/30 reliably give ~70%/30% of
+ *   objects that color rather than just a 70/30 *chance* per object.
  */
-export type ColorConfig = string | string[];
+export type ColorConfig = string | string[] | WeightedColor[];
 
 export interface GridConfig {
   /**

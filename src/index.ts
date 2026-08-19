@@ -4,6 +4,7 @@ export type {
   LightConfig,
   LightStyle,
   ColorConfig,
+  WeightedColor,
   Arrangement,
   RotationConfig,
   AxisRotation,

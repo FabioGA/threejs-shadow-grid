@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OBJECT_MATERIAL_METALNESS, OBJECT_MATERIAL_ROUGHNESS, PIXELS_PER_UNIT } from "./defaults";
-import { pickColor } from "./colors";
+import { createColorPicker } from "./colors";
 import { createRng } from "./random";
 import { maxObjectSize } from "./resolveConfig";
 import type { AxisRotation, ResolvedGridConfig } from "./types";
@@ -71,6 +71,10 @@ export class GridBuilder {
     // then scales down from that reference toward its randomly picked size.
     const referenceSize = maxObjectSize(config.objectSize);
 
+    // Built once per rebuild (not per cell) so a weighted palette can
+    // pre-partition the exact `total` instance count across colors.
+    const colorPicker = createColorPicker(config.colors, total, rng);
+
     // Pass 1: decide per-cell model index + color + transform jitter, and
     // tally how many instances each model needs.
     type CellPlan = {
@@ -119,7 +123,7 @@ export class GridBuilder {
           rotY,
           rotZ,
           scale,
-          color: pickColor(config.colors, rng),
+          color: colorPicker(),
         });
         countPerModel[modelIndex]++;
       }

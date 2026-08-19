@@ -99,13 +99,25 @@ function ShadowGridBackground(props: GridConfig) {
 | `rotation` | `number \| "random" \| { x?, y?, z? }` (degrees) | `0` | A bare number/`"random"` rotates only around the vertical (Y) axis. Pass `{ x, y, z }` to control each axis independently - each can itself be a fixed number or `"random"`; omitted axes stay at 0. Independent of `arrangement`. |
 | `overscan` | `number` (0-1) | `0.15` | Extra rows/columns rendered past the edges, to avoid pop-in. Rarely needs changing. |
 | `maxInstances` | `number` | `4000` | Safety cap on total rendered objects (perf guard for very small cell sizes / huge containers). |
-| `colors` | `string \| string[]` | `"#c9ccd6"` | A single CSS color applies to every object. An array (e.g. `["#ff4d4d", "#4d79ff"]`) makes each object randomly pick one color from the list. Ignored if `matchBackground` is `true`. |
+| `colors` | `string \| string[] \| { color, weight }[]` | `"#c9ccd6"` | A single CSS color applies to every object. A plain array (e.g. `["#ff4d4d", "#4d79ff"]`) makes each object independently pick one color at random with equal odds. An array of `{ color, weight }` instead partitions the *exact* current instance count proportionally to weight (e.g. weights 70/30 -> ~70%/30% split, not just a 70/30 chance per object) - see "Weighted palettes" below. Ignored if `matchBackground` is `true`. |
 | `backgroundColor` | `string \| "transparent"` | `"#0a0a0f"` | `"transparent"` lets the page background show through (objects then only shadow each other slightly, since there's no backdrop to catch shadows). |
 | `matchBackground` | `boolean` | `false` | When `true`, forces object color to exactly match `backgroundColor` (ignoring `colors`), so objects are only revealed by their cast shadows. No effect if `backgroundColor` is `"transparent"`. |
 | `seed` | `number` | fixed internal default | Seeds the "random" choices (arrangement jitter, palette pick, model pick) so results are reproducible instead of using `Math.random()`. |
 | `light` | `LightStyle \| LightConfig` | `"medium"` | See below. |
 | `maxPixelRatio` | `number` | `2` | Caps `devicePixelRatio` for performance on high-DPI screens. |
 | `shadows` | `boolean` | `true` | Turn off to skip shadow-map rendering entirely (cheaper, flatter look). |
+
+### Weighted palettes
+
+```ts
+colors: [
+  { color: "#ff4d4d", weight: 50 },
+  { color: "#4d79ff", weight: 30 },
+  { color: "#4dff88", weight: 20 },
+]
+```
+
+Weights are relative, not required to sum to 100 - `{ weight: 2 }` next to `{ weight: 1 }` just means twice as many objects get that color. Each rebuild (initial render, resize, or `update()`) partitions that render's *exact* instance count across colors proportionally to weight, then shuffles the assignment across cells - so, unlike a plain `string[]` palette (where each object independently rolls the dice and the split is only approximately even over a large enough count), a weighted palette's split is exact for every render, including small grids.
 
 ### Light
 
