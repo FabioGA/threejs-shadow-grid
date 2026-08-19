@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { PIXELS_PER_UNIT } from "./defaults";
+import { OBJECT_MATERIAL_METALNESS, OBJECT_MATERIAL_ROUGHNESS, PIXELS_PER_UNIT } from "./defaults";
 import { pickColor } from "./colors";
 import { createRng } from "./random";
 import type { ResolvedGridConfig } from "./types";
@@ -40,8 +40,8 @@ export class GridBuilder {
     this.materials = geometries.map(
       () =>
         new THREE.MeshStandardMaterial({
-          roughness: 0.55,
-          metalness: 0.08,
+          roughness: OBJECT_MATERIAL_ROUGHNESS,
+          metalness: OBJECT_MATERIAL_METALNESS,
         })
     );
   }
