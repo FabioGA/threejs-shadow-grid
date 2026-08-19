@@ -21,6 +21,15 @@ export type Arrangement = "grid" | "random";
 export type RotationConfig = number | "random";
 
 /**
+ * Target on-screen object size, in CSS pixels (largest bounding-box
+ * dimension).
+ * - A number -> every object is that exact size.
+ * - `{ min, max }` -> each object gets an independent random size in that
+ *   pixel range.
+ */
+export type SizeConfig = number | { min: number; max: number };
+
+/**
  * Simplified light presets. Internally these map to a light intensity,
  * distance and shadow softness (penumbra / shadow map blur radius) so
  * users never have to touch raw Three.js lighting values.
@@ -81,9 +90,11 @@ export interface GridConfig {
   cellSize?: number;
   /**
    * Target on-screen size, in CSS pixels (largest bounding-box dimension),
-   * each loaded model is normalized to. Default: 120.
+   * each loaded model is normalized to. A fixed number gives every object
+   * the same size; `{ min, max }` gives each object an independent random
+   * size in that pixel range. Default: 120.
    */
-  objectSize?: number;
+  objectSize?: SizeConfig;
   /** "grid" = perfectly aligned rows/columns. "random" = jittered position per cell. Default: "grid". */
   arrangement?: Arrangement;
   /** 0-1 amount of position jitter applied when arrangement is "random". Default: 0.4. */

@@ -5,5 +5,7 @@ export type {
   LightStyle,
   ColorConfig,
   Arrangement,
+  RotationConfig,
+  SizeConfig,
   ModelSource,
 } from "./types";

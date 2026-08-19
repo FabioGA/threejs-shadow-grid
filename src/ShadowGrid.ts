@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { resolveConfig } from "./resolveConfig";
+import { maxObjectSize, resolveConfig } from "./resolveConfig";
 import { loadModels } from "./loaders";
 import { GridBuilder } from "./grid";
 import { LightRig } from "./light";
@@ -148,7 +148,7 @@ export class ShadowGrid {
 
   private async loadAndBuild() {
     const token = ++this.loadToken;
-    const objectSizeUnits = this.config.objectSize / PIXELS_PER_UNIT;
+    const objectSizeUnits = maxObjectSize(this.config.objectSize) / PIXELS_PER_UNIT;
     try {
       const geometries = await loadModels(this.config.models, objectSizeUnits);
       if (this.destroyed || token !== this.loadToken) return;

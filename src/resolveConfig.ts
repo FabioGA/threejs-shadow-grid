@@ -1,4 +1,4 @@
-import type { GridConfig, LightConfig, ModelSource, ResolvedGridConfig } from "./types";
+import type { GridConfig, LightConfig, ModelSource, ResolvedGridConfig, SizeConfig } from "./types";
 import {
   DEFAULT_ARRANGEMENT,
   DEFAULT_BACKGROUND_COLOR,
@@ -33,6 +33,15 @@ function resolveLight(light: GridConfig["light"]): Required<LightConfig> {
 
 function toModelArray(models: ModelSource | ModelSource[]): ModelSource[] {
   return Array.isArray(models) ? models : [models];
+}
+
+/**
+ * The largest possible on-screen size `objectSize` can resolve to - used to
+ * normalize loaded geometry, so per-instance size (when `objectSize` is a
+ * `{ min, max }` range) can then be applied as an instance scale <= 1.
+ */
+export function maxObjectSize(objectSize: SizeConfig): number {
+  return typeof objectSize === "number" ? objectSize : objectSize.max;
 }
 
 export function resolveConfig(config: GridConfig): ResolvedGridConfig {

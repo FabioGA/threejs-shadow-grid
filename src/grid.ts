@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OBJECT_MATERIAL_METALNESS, OBJECT_MATERIAL_ROUGHNESS, PIXELS_PER_UNIT } from "./defaults";
 import { pickColor } from "./colors";
 import { createRng } from "./random";
+import { maxObjectSize } from "./resolveConfig";
 import type { ResolvedGridConfig } from "./types";
 
 const _matrix = new THREE.Matrix4();
@@ -60,6 +61,11 @@ export class GridBuilder {
 
     const rng = createRng(config.seed ^ (columns * 73856093) ^ (rows * 19349663));
 
+    // Geometry is normalized (in loaders.ts) to the largest size objectSize
+    // can resolve to; when objectSize is a { min, max } range, each instance
+    // then scales down from that reference toward its randomly picked size.
+    const referenceSize = maxObjectSize(config.objectSize);
+
     // Pass 1: decide per-cell model index + color + transform jitter, and
     // tally how many instances each model needs.
     type CellPlan = {
@@ -93,7 +99,10 @@ export class GridBuilder {
         const rotY =
           config.rotation === "random" ? rng() * Math.PI * 2 : (config.rotation * Math.PI) / 180;
         const rotZ = config.arrangement === "random" ? (rng() - 0.5) * jitter * 0.6 : 0;
-        const scale = 1 + (config.arrangement === "random" ? (rng() - 0.5) * jitter * 0.5 : 0);
+        const scale =
+          typeof config.objectSize === "number"
+            ? 1
+            : (config.objectSize.min + rng() * (config.objectSize.max - config.objectSize.min)) / referenceSize;
 
         plans.push({
           modelIndex,

@@ -93,7 +93,7 @@ function ShadowGridBackground(props: GridConfig) {
 | `container` | `HTMLElement \| string` | required | Element, or CSS selector, to fill completely. |
 | `models` | `string \| string[]` | required | STL URL(s). Multiple models are randomly distributed across cells. |
 | `cellSize` | `number` (px) | `220` | Distance between neighboring object centers. Columns/rows are always auto-computed from this + the container size - this is what makes the grid "infinite" (it always fills the space). |
-| `objectSize` | `number` (px) | `120` | Each model is centered and scaled so its largest bounding-box dimension equals this. Lets you mix STL files of wildly different native scales. |
+| `objectSize` | `number \| { min, max }` (px) | `120` | Each model is centered and scaled so its largest bounding-box dimension equals this. Lets you mix STL files of wildly different native scales. A fixed number gives every object the same size; `{ min, max }` gives each object an independent random size in that range. |
 | `arrangement` | `"grid" \| "random"` | `"grid"` | `"random"` jitters position per cell (amount controlled by `jitter`). |
 | `jitter` | `number` (0-1) | `0.4` | Only used when `arrangement` is `"random"`. |
 | `rotation` | `number \| "random"` (degrees) | `0` | Rotation around the vertical axis. A fixed number applies to every object; `"random"` gives each object an independent random rotation. Independent of `arrangement`. |
