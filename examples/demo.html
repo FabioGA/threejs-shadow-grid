@@ -401,6 +401,14 @@
             <fieldset>
               <legend>Light</legend>
               <div class="field">
+                <label for="lightMode">input mode</label>
+                <select id="lightMode">
+                  <option value="auto" selected>auto</option>
+                  <option value="pointer">mouse hover</option>
+                  <option value="sweep">static touch</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="lightStyle">style</label>
                 <select id="lightStyle">
                   <option value="soft">soft</option>
@@ -540,6 +548,7 @@
         shadows: true,
         maxPixelRatio: 2,
         seed: 1337,
+        lightMode: "auto",
         lightStyle: "medium",
         lightIntensity: 1,
         autoSweepOnTouch: true,
@@ -583,6 +592,7 @@
           hardness: s.hardness,
           seed: s.seed,
           light: {
+            mode: s.lightMode,
             style: s.lightStyle,
             intensity: s.lightIntensity,
             autoSweepOnTouch: s.autoSweepOnTouch,
@@ -630,6 +640,7 @@ const grid = new ShadowGrid({
   hardness: ${s.hardness},
   seed: ${s.seed},
   light: {
+    mode: "${s.lightMode}",
     style: "${s.lightStyle}",
     intensity: ${s.lightIntensity},
     autoSweepOnTouch: ${s.autoSweepOnTouch},
@@ -765,6 +776,7 @@ const grid = new ShadowGrid({
       bindCheckbox("shadows", "shadows");
       bindRange("maxPixelRatio", "maxPixelRatio", (v) => v.toFixed(1));
 
+      bindSelect("lightMode", "lightMode");
       bindSelect("lightStyle", "lightStyle");
       bindRange("lightIntensity", "lightIntensity", (v) => v.toFixed(1));
       bindCheckbox("autoSweepOnTouch", "autoSweepOnTouch");
