@@ -141,7 +141,7 @@ light: {
 - **medium**: balanced, the default.
 - **hard**: small, crisp, high-contrast shadows - punchy and graphic.
 
-The light starts in "auto sweep" mode and switches to following the pointer the moment it detects real pointer movement (mouse, pen, or a touch drag); moving the pointer off the container drops back to sweeping rather than freezing the shadow in its last spot. That also means touch-only visitors - who typically never fire a hover-style pointer move - simply get the sweep the whole time. The sweep drifts toward a new randomized waypoint every couple of seconds (eased, not snapped), so it reads as organic movement rather than a fixed circular/repeating path; `sweepSpeed` controls how often those waypoints change.
+The light starts in "auto sweep" mode and switches to following the pointer the moment it detects real pointer movement (mouse, pen, or a touch drag); moving the pointer off the container drops back to sweeping rather than freezing the shadow in its last spot. That also means touch-only visitors - who typically never fire a hover-style pointer move - simply get the sweep the whole time. The sweep is a continuous drift (layered sine waves at incommensurate frequencies, not a "pick a point and stop there" scheme), so it's always in motion - it never pauses at any point along its path and never repeats an obvious fixed loop; `sweepSpeed` scales how fast it drifts.
 
 ## Interactive playground
 
