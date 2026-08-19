@@ -134,6 +134,9 @@ light: {
   sweepSpeed: 1,         // speed multiplier for that drift (higher = faster, more frequent waypoint changes) - default 1
   ambient: 0.45,          // ambient fill light (0-1) so shadows aren't pure black - default 0.45
   easing: 4,              // how quickly the light eases toward the pointer/sweep target - higher = snappier - default 4
+  color: "#ffffff",       // tints the light and the shadows it casts - default "#ffffff"
+  hardness: 0.5,          // 0 (very soft) - 1 (very crisp) shadow edge; overrides the softness `style` implies - default depends on `style`
+  mode: "auto",           // "auto" | "pointer" | "sweep" - pin pointer-follow or auto-sweep instead of the default hybrid - default "auto"
 }
 ```
 
@@ -141,7 +144,9 @@ light: {
 - **medium**: balanced, the default.
 - **hard**: small, crisp, high-contrast shadows - punchy and graphic.
 
-The light starts in "auto sweep" mode and switches to following the pointer the moment it detects real pointer movement (mouse, pen, or a touch drag); moving the pointer off the container drops back to sweeping rather than freezing the shadow in its last spot. That also means touch-only visitors - who typically never fire a hover-style pointer move - simply get the sweep the whole time. The sweep is a continuous drift (layered sine waves at incommensurate frequencies, not a "pick a point and stop there" scheme), so it's always in motion - it never pauses at any point along its path and never repeats an obvious fixed loop; `sweepSpeed` scales how fast it drifts.
+`hardness` gives continuous control over shadow crispness beyond the three presets - set only `style` and it picks a sensible default hardness (soft: 0.15, medium: 0.5, hard: 0.9); set `hardness` explicitly to fine-tune independently of `style`.
+
+The light starts in "auto sweep" mode and switches to following the pointer the moment it detects real pointer movement (mouse, pen, or a touch drag); moving the pointer off the container drops back to sweeping rather than freezing the shadow in its last spot. That also means touch-only visitors - who typically never fire a hover-style pointer move - simply get the sweep the whole time. The sweep is a continuous drift (layered sine waves at incommensurate frequencies, not a "pick a point and stop there" scheme), so it's always in motion - it never pauses at any point along its path and never repeats an obvious fixed loop; `sweepSpeed` scales how fast it drifts. Set `mode: "pointer"` or `mode: "sweep"` to pin one of those two behaviors instead of the automatic hybrid - handy for previewing the touch experience on a desktop.
 
 ## Interactive playground
 

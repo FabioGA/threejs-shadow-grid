@@ -81,6 +81,27 @@ export interface LightConfig {
    * more languid motion. Default: 4.
    */
   easing?: number;
+  /** CSS color for the key ("sun") light - tints both the light itself and the shadows it casts. Default: "#ffffff" (white). */
+  color?: string;
+  /**
+   * Shadow crispness, 0 (very soft/diffuse) to 1 (very hard/crisp),
+   * overriding the softness `style` would otherwise imply. Left unset, it
+   * defaults to a value matching whichever `style` is active, so setting
+   * only `style` behaves exactly as before - set `hardness` for finer
+   * control than the three presets allow.
+   */
+  hardness?: number;
+  /**
+   * Forces the light's input mode instead of the default hybrid behavior:
+   * - "auto" (default) - starts in touch auto-sweep, switches to following
+   *   the pointer on the first real pointer movement, and back to sweeping
+   *   when the pointer leaves the container.
+   * - "pointer" - always follows the pointer, never falls back to sweeping.
+   * - "sweep" - always auto-sweeps, ignoring the pointer entirely.
+   * Useful for previewing the touch experience on a desktop, or pinning
+   * one behavior regardless of input device.
+   */
+  mode?: "auto" | "pointer" | "sweep";
 }
 
 /** One entry in a weighted color palette - see `ColorConfig`. */

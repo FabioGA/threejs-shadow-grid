@@ -22,6 +22,7 @@ import {
   DEFAULT_ROTATION,
   DEFAULT_SEED,
   DEFAULT_SHADOWS,
+  LIGHT_STYLE_PRESETS,
 } from "./defaults";
 
 function resolveContainer(container: HTMLElement | string): HTMLElement {
@@ -34,9 +35,12 @@ function resolveContainer(container: HTMLElement | string): HTMLElement {
 }
 
 function resolveLight(light: GridConfig["light"]): Required<LightConfig> {
-  if (!light) return { ...DEFAULT_LIGHT };
-  if (typeof light === "string") return { ...DEFAULT_LIGHT, style: light };
-  return { ...DEFAULT_LIGHT, ...light };
+  const partial: LightConfig = !light ? {} : typeof light === "string" ? { style: light } : light;
+  const style = partial.style ?? DEFAULT_LIGHT.style;
+  // hardness's real default is style-dependent (soft/medium/hard read as
+  // increasingly crisp shadows) unless the caller sets it explicitly.
+  const hardness = partial.hardness ?? LIGHT_STYLE_PRESETS[style].defaultHardness;
+  return { ...DEFAULT_LIGHT, ...partial, style, hardness };
 }
 
 /** Resolves the rotation shorthand (bare axis value = Y-axis only) into an explicit x/y/z object. */

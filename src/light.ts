@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { LIGHT_STYLE_PRESETS } from "./defaults";
+import { LIGHT_STYLE_PRESETS, MAX_SHADOW_RADIUS, MIN_SHADOW_RADIUS } from "./defaults";
 import type { LightConfig } from "./types";
 
 const TWO_PI = Math.PI * 2;
@@ -57,14 +57,15 @@ export class LightRig {
     this.key.target.position.set(0, 0, 0);
     this.ambient = new THREE.AmbientLight(0xffffff, 1);
 
-    // Starts in "auto sweep" mode (no pointer activity has happened yet, so
-    // there's nothing to follow). The first real pointermove - mouse, pen,
-    // or a touch drag - switches to "follow the pointer" mode; leaving the
-    // container drops back to sweeping instead of freezing the light in
-    // place. This naturally covers touch devices too: if they never fire a
-    // hover-style pointermove, the rig just keeps sweeping, which is the
-    // desired behavior there.
-    this.usingPointer = false;
+    // With mode "auto" (the default), starts in "auto sweep" mode (no
+    // pointer activity has happened yet, so there's nothing to follow); the
+    // first real pointermove - mouse, pen, or a touch drag - switches to
+    // "follow the pointer" mode, and leaving the container drops back to
+    // sweeping instead of freezing the light in place. This naturally
+    // covers touch devices too: if they never fire a hover-style
+    // pointermove, the rig just keeps sweeping. mode "pointer"/"sweep" pin
+    // one of those two behaviors regardless of actual pointer activity.
+    this.usingPointer = config.mode === "pointer";
 
     container.addEventListener("pointermove", this.onPointerMove);
     container.addEventListener("pointerleave", this.onPointerLeave);
@@ -74,6 +75,8 @@ export class LightRig {
 
   updateConfig(config: Required<LightConfig>) {
     this.config = config;
+    if (config.mode === "sweep") this.usingPointer = false;
+    if (config.mode === "pointer") this.usingPointer = true;
     this.applyStyle();
   }
 
@@ -93,7 +96,9 @@ export class LightRig {
   private applyStyle() {
     const preset = LIGHT_STYLE_PRESETS[this.config.style];
     this.key.intensity = preset.intensity;
-    this.key.shadow.radius = preset.shadowRadius;
+    this.key.color.set(this.config.color);
+    const hardness = THREE.MathUtils.clamp(this.config.hardness, 0, 1);
+    this.key.shadow.radius = THREE.MathUtils.lerp(MAX_SHADOW_RADIUS, MIN_SHADOW_RADIUS, hardness);
     this.reach = preset.distance * 0.55;
     this.lightDistance = preset.distance;
 
@@ -108,6 +113,7 @@ export class LightRig {
   }
 
   private handlePointerMove(e: PointerEvent) {
+    if (this.config.mode === "sweep") return;
     this.usingPointer = true;
     const rect = this.container.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
@@ -118,7 +124,9 @@ export class LightRig {
 
   private handlePointerLeave() {
     // Drop back to the automatic sweep once the pointer leaves the
-    // container, rather than freezing the light at its last spot.
+    // container, rather than freezing the light at its last spot - unless
+    // mode "pointer" pins it in place regardless.
+    if (this.config.mode === "pointer") return;
     this.usingPointer = false;
   }
 

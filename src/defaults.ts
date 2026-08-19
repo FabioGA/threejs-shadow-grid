@@ -43,36 +43,41 @@ export const LIGHT_STYLE_PRESETS: Record<
     intensity: number;
     distance: number;
     lightSize: number; // approximates a soft-shadow area light via PCFSoft + radius
-    shadowRadius: number;
     shadowMapSize: number;
     ambientBoost: number;
+    /** Default `hardness` (see LightConfig) for this style, when the caller doesn't set one explicitly. */
+    defaultHardness: number;
   }
 > = {
   soft: {
     intensity: 1.4,
     distance: 9,
     lightSize: 3.2,
-    shadowRadius: 6,
     shadowMapSize: 1024,
     ambientBoost: 0.15,
+    defaultHardness: 0.15,
   },
   medium: {
     intensity: 1.9,
     distance: 7,
     lightSize: 1.6,
-    shadowRadius: 3,
     shadowMapSize: 1536,
     ambientBoost: 0,
+    defaultHardness: 0.5,
   },
   hard: {
     intensity: 2.6,
     distance: 5.5,
     lightSize: 0.4,
-    shadowRadius: 0.6,
     shadowMapSize: 2048,
     ambientBoost: -0.1,
+    defaultHardness: 0.9,
   },
 };
+
+/** Shadow-map blur radius at hardness 0 (very soft) and 1 (very hard) - hardness lerps between these. */
+export const MIN_SHADOW_RADIUS = 0.3;
+export const MAX_SHADOW_RADIUS = 6.5;
 
 export const DEFAULT_LIGHT: Required<LightConfig> = {
   style: "medium",
@@ -81,4 +86,9 @@ export const DEFAULT_LIGHT: Required<LightConfig> = {
   sweepSpeed: 1,
   ambient: 0.45,
   easing: 4,
+  color: "#ffffff",
+  // Actual default is style-dependent (see LIGHT_STYLE_PRESETS.defaultHardness);
+  // resolveLight() always recomputes this unless the caller sets hardness explicitly.
+  hardness: 0.5,
+  mode: "auto",
 };
