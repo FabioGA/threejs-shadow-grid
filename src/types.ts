@@ -164,6 +164,14 @@ export interface GridConfig {
   /** 0-1 amount of position jitter applied when arrangement is "random". Default: 0.4. */
   jitter?: number;
   /**
+   * Horizontal offset applied per row, as a fraction of `cellSize` (can be
+   * negative). Row `r` is shifted by `(r * rowOffset) mod 1` cell widths,
+   * so e.g. `0.5` gives a classic brick/masonry pattern (rows alternate
+   * between unshifted and half-shifted), `0.25` a 4-row diagonal cascade,
+   * and `0` (the default) a plain aligned grid. Independent of `arrangement`.
+   */
+  rowOffset?: number;
+  /**
    * Object rotation, in degrees. A bare number or `"random"` rotates only
    * around the vertical (Y) axis; pass `{ x, y, z }` to control each axis
    * independently (each can itself be a fixed number or `"random"`).

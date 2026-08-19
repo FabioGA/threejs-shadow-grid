@@ -11,7 +11,7 @@ It's framework-agnostic - a plain TypeScript class with no React/Vue/etc depende
 - Mouse-driven shadow: a single directional light follows the pointer. On touch devices (or before the first pointer move) it drifts naturally between randomized waypoints (speed configurable) instead of sitting static or looping a fixed path.
 - Three simplified light presets (`soft` / `medium` / `hard`) so you never have to touch raw Three.js lighting values.
 - Physically-based material from soft matte rubber to hard, glossy, and reflective, dialed with a single `hardness` knob.
-- Grid or randomized (jittered position) arrangement, plus independent rotation and size controls (fixed or randomized).
+- Grid or randomized (jittered position) arrangement, plus independent rotation and size controls (fixed or randomized), and per-row horizontal offset for brick/masonry/cascade layouts.
 - Single color, or a palette that's randomly assigned per object.
 - Loads one or more STL files; each grid cell randomly picks one when you pass several.
 - Ships as ESM + CJS + full TypeScript types.
@@ -96,6 +96,7 @@ function ShadowGridBackground(props: GridConfig) {
 | `objectSize` | `number \| { min, max }` (px) | `120` | Each model is centered and scaled so its largest bounding-box dimension equals this. Lets you mix STL files of wildly different native scales. A fixed number gives every object the same size; `{ min, max }` gives each object an independent random size in that range. |
 | `arrangement` | `"grid" \| "random"` | `"grid"` | `"random"` jitters position per cell (amount controlled by `jitter`). |
 | `jitter` | `number` (0-1) | `0.4` | Only used when `arrangement` is `"random"`. |
+| `rowOffset` | `number` | `0` | Horizontal offset per row, as a fraction of `cellSize` (can be negative). Row `r` shifts by `(r * rowOffset) mod 1` cell widths - `0.5` gives a brick/masonry pattern, `0.25` a 4-row diagonal cascade, `0` a plain grid. Independent of `arrangement`. |
 | `rotation` | `number \| "random" \| { x?, y?, z? }` (degrees) | `0` | A bare number/`"random"` rotates only around the vertical (Y) axis. Pass `{ x, y, z }` to control each axis independently - each can itself be a fixed number or `"random"`; omitted axes stay at 0. Independent of `arrangement`. |
 | `overscan` | `number` (0-1) | `0.15` | Extra rows/columns rendered past the edges, to avoid pop-in. Rarely needs changing. |
 | `maxInstances` | `number` | `4000` | Safety cap on total rendered objects (perf guard for very small cell sizes / huge containers). |

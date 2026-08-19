@@ -26,6 +26,12 @@ function axisRotationRadians(axis: AxisRotation, rng: () => number): number {
   return axis === "random" ? rng() * Math.PI * 2 : (axis * Math.PI) / 180;
 }
 
+/** Fractional part of `value`, normalized into [0, 1) even for negative input. */
+function fractionalPart(value: number): number {
+  const f = value % 1;
+  return f < 0 ? f + 1 : f;
+}
+
 /**
  * Builds and maintains the InstancedMesh grid: given a set of loaded
  * geometries and the visible viewport size (in world units), it works out
@@ -87,8 +93,11 @@ export class GridBuilder {
 
     const cellSizeUnits = config.cellSize / PIXELS_PER_UNIT;
     const overscanCells = Math.max(0, Math.round(config.overscan * 4));
+    // rowOffset can shift a row by up to nearly a full cell width; one extra
+    // column on each side keeps that shift from exposing a gap at the edge.
+    const rowOffsetMargin = config.rowOffset !== 0 ? 1 : 0;
 
-    const columns = Math.max(1, Math.ceil(viewportWidthUnits / cellSizeUnits) + overscanCells * 2);
+    const columns = Math.max(1, Math.ceil(viewportWidthUnits / cellSizeUnits) + (overscanCells + rowOffsetMargin) * 2);
     const rows = Math.max(1, Math.ceil(viewportHeightUnits / cellSizeUnits) + overscanCells * 2);
     const total = Math.min(columns * rows, config.maxInstances);
 
@@ -124,6 +133,8 @@ export class GridBuilder {
 
     let cellIndex = 0;
     outer: for (let row = 0; row < rows; row++) {
+      const rowShiftUnits = fractionalPart(row * config.rowOffset) * cellSizeUnits;
+
       for (let col = 0; col < columns; col++) {
         if (cellIndex >= total) break outer;
         cellIndex++;
@@ -144,7 +155,7 @@ export class GridBuilder {
 
         plans.push({
           modelIndex,
-          x: originX + col * cellSizeUnits + jitterX,
+          x: originX + col * cellSizeUnits + jitterX + rowShiftUnits,
           y: originY + row * cellSizeUnits + jitterY,
           z: jitterZ,
           rotX,

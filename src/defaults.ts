@@ -9,6 +9,7 @@ export const DEFAULT_CELL_SIZE = 220;
 export const DEFAULT_OBJECT_SIZE = 120;
 export const DEFAULT_ARRANGEMENT = "grid" as const;
 export const DEFAULT_JITTER = 0.4;
+export const DEFAULT_ROW_OFFSET = 0;
 export const DEFAULT_ROTATION = 0;
 export const DEFAULT_OVERSCAN = 0.15;
 export const DEFAULT_MAX_INSTANCES = 4000;

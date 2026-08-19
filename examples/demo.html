@@ -273,6 +273,11 @@
                 <input type="range" id="jitter" min="0" max="1" step="0.05" value="0.4" />
                 <span class="val" id="jitter-val">0.40</span>
               </div>
+              <div class="field">
+                <label for="rowOffset">rowOffset</label>
+                <input type="range" id="rowOffset" min="-1" max="1" step="0.05" value="0" />
+                <span class="val" id="rowOffset-val">0.00</span>
+              </div>
               <div class="axis-group">
                 <div class="axis-group-label">rotation (x / y / z)</div>
                 <div class="field">
@@ -515,6 +520,7 @@
         objectSizeMax: 140,
         arrangement: "grid",
         jitter: 0.4,
+        rowOffset: 0,
         rotationXMode: "fixed",
         rotationXDeg: 0,
         rotationYMode: "fixed",
@@ -560,6 +566,7 @@
           objectSize: s.objectSizeMode === "range" ? { min: s.objectSizeMin, max: s.objectSizeMax } : s.objectSize,
           arrangement: s.arrangement,
           jitter: s.jitter,
+          rowOffset: s.rowOffset,
           rotation: {
             x: axisRotationValue(s.rotationXMode, s.rotationXDeg),
             y: axisRotationValue(s.rotationYMode, s.rotationYDeg),
@@ -613,6 +620,7 @@ const grid = new ShadowGrid({
   objectSize: ${objectSize},
   arrangement: "${s.arrangement}",
   jitter: ${s.jitter},
+  rowOffset: ${s.rowOffset},
   rotation: ${rotation},
   overscan: ${s.overscan},
   maxInstances: ${s.maxInstances},
@@ -721,6 +729,7 @@ const grid = new ShadowGrid({
       bindRange("objectSizeMax", "objectSizeMax", (v) => `${v}px`);
       bindSelect("arrangement", "arrangement");
       bindRange("jitter", "jitter", (v) => v.toFixed(2));
+      bindRange("rowOffset", "rowOffset", (v) => v.toFixed(2));
       ["X", "Y", "Z"].forEach((axis) => {
         bindSelect(`rotation${axis}Mode`, `rotation${axis}Mode`, (v) =>
           document.getElementById(`rotation${axis}-fixed-group`).classList.toggle("active", v === "fixed")
