@@ -90,7 +90,7 @@ export function resolveConfig(config: GridConfig): ResolvedGridConfig {
     rotation: resolveRotation(config.rotation),
     overscan: config.overscan ?? DEFAULT_OVERSCAN,
     maxInstances: config.maxInstances ?? DEFAULT_MAX_INSTANCES,
-    colors: matchBackground && backgroundColor !== "transparent" ? backgroundColor : config.colors ?? DEFAULT_COLORS,
+    colors: matchBackground && backgroundColor !== "transparent" ? backgroundColor : (config.colors ?? DEFAULT_COLORS),
     hardness: config.hardness ?? DEFAULT_HARDNESS,
     backgroundColor,
     matchBackground,

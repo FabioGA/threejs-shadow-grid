@@ -20,7 +20,7 @@ function shuffle<T>(items: T[], rng: () => number): T[] {
  * counts always add up to exactly `total`), then shuffles the assignment
  * so same-colored instances aren't clustered in generation order.
  */
-function buildWeightedAssignment(entries: WeightedColor[], total: number, rng: () => number): THREE.Color[] {
+export function buildWeightedAssignment(entries: WeightedColor[], total: number, rng: () => number): THREE.Color[] {
   const sumWeights = entries.reduce((sum, e) => sum + Math.max(0, e.weight), 0);
   if (sumWeights <= 0) {
     const fallback = new THREE.Color(entries[0]?.color ?? "#ffffff");
@@ -31,7 +31,11 @@ function buildWeightedAssignment(entries: WeightedColor[], total: number, rng: (
   let remaining = total;
   entries.forEach((entry, i) => {
     const isLast = i === entries.length - 1;
-    const count = isLast ? remaining : Math.round((Math.max(0, entry.weight) / sumWeights) * total);
+    // Clamp each non-last share to what's actually left: independently rounding
+    // every entry's share can otherwise overshoot `total` (e.g. four equal
+    // weights splitting a total of 2 each round 0.5 up to 1, summing to 3).
+    const rounded = Math.round((Math.max(0, entry.weight) / sumWeights) * total);
+    const count = isLast ? Math.max(0, remaining) : Math.min(Math.max(0, remaining), rounded);
     remaining -= count;
     const color = new THREE.Color(entry.color);
     for (let j = 0; j < count; j++) assignment.push(color);

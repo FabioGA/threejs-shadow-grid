@@ -1,10 +1,10 @@
 node_modules
 dist
+coverage
 .DS_Store
 *.log
 npm-debug.log*
 .vscode
-scripts/*.png
 **/local.**
 
 # macOS custom folder icon artifacts (created by Google Drive sync)

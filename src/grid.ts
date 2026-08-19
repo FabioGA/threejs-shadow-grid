@@ -54,6 +54,7 @@ export class GridBuilder {
   }
 
   setGeometries(geometries: THREE.BufferGeometry[]) {
+    this.geometries.forEach((g) => g.dispose());
     this.geometries = geometries;
     // One shared material per model (per-instance color comes from the
     // InstancedMesh color buffer, so all instances of a model share one
@@ -214,5 +215,7 @@ export class GridBuilder {
     this.clearMeshes();
     this.materials.forEach((m) => m.dispose());
     this.materials = [];
+    this.geometries.forEach((g) => g.dispose());
+    this.geometries = [];
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "threejs-shadow-grid",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A configurable, infinitely-tiling 3D object grid background for Three.js, with a mouse/touch-driven light that casts moving shadows.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -8,9 +8,14 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "files": [
@@ -23,6 +28,11 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -41,6 +51,10 @@
     "type": "git",
     "url": "git+https://github.com/FabioGA/threejs-shadow-grid.git"
   },
+  "homepage": "https://github.com/FabioGA/threejs-shadow-grid#readme",
+  "bugs": {
+    "url": "https://github.com/FabioGA/threejs-shadow-grid/issues"
+  },
   "peerDependencies": {
     "three": ">=0.150.0"
   },
@@ -48,7 +62,14 @@
     "three": "^0.169.0",
     "@types/three": "^0.169.0",
     "typescript": "^5.6.0",
-    "tsup": "^8.3.0"
+    "tsup": "^8.3.0",
+    "vitest": "^4.1.11",
+    "jsdom": "^26.1.0",
+    "eslint": "^10.8.1",
+    "@eslint/js": "^10.0.1",
+    "typescript-eslint": "^8.67.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6"
   },
   "engines": {
     "node": ">=18"

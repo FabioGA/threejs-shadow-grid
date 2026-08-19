@@ -237,8 +237,9 @@ export interface GridConfig {
 }
 
 /** Fully-resolved internal config (all optional fields filled in, unions narrowed). */
-export interface ResolvedGridConfig
-  extends Required<Omit<GridConfig, "light" | "colors" | "container" | "models" | "rotation">> {
+export interface ResolvedGridConfig extends Required<
+  Omit<GridConfig, "light" | "colors" | "container" | "models" | "rotation">
+> {
   light: Required<LightConfig>;
   colors: ColorConfig;
   container: HTMLElement;

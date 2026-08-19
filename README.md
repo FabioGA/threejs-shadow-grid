@@ -1,5 +1,8 @@
 # threejs-shadow-grid
 
+[![npm version](https://img.shields.io/npm/v/threejs-shadow-grid.svg)](https://www.npmjs.com/package/threejs-shadow-grid)
+[![license: MIT](https://img.shields.io/npm/l/threejs-shadow-grid.svg)](./LICENSE)
+
 A configurable, infinitely-tiling grid of 3D objects for site backgrounds, built on [Three.js](https://threejs.org). Drop in one or more STL models; the library tiles them to completely fill whatever container you give it, and lights them with a single shadow-casting "sun" that follows the mouse (or sweeps automatically on touch devices), so the shadows shift as people move their cursor around the page.
 
 It's framework-agnostic - a plain TypeScript class with no React/Vue/etc dependency - so it drops into any site.
@@ -194,6 +197,20 @@ Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thin
 ## Roadmap / current scope
 
 v1 ships with STL support only (via `STLLoader`) and auto-fill grid sizing (cell-size driven, not a fixed row/column count) - these were deliberate scope choices to ship a well-tested core first. The internal loader/grid modules are structured so glTF/OBJ support and a fixed-count grid mode can be added without a breaking change to the public API.
+
+## Development
+
+```bash
+npm install
+npm run build       # one-off build (esm + cjs + types, via tsup)
+npm run dev          # rebuild on change
+npm run typecheck    # tsc --noEmit
+npm run lint          # eslint
+npm run format        # prettier --write
+npm test               # vitest run
+```
+
+To try the interactive demo locally, see "Interactive playground" above. Contributions are welcome - please run `npm run typecheck`, `npm run lint`, and `npm test` before opening a PR. See [CHANGELOG.md](./CHANGELOG.md) for release history.
 
 ## License
 

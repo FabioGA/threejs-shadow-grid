@@ -1,0 +1,6 @@
+dist
+coverage
+node_modules
+examples/demo.html
+package-lock.json
+*.md
