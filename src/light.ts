@@ -138,7 +138,7 @@ export class LightRig {
     }
 
     // Ease toward the target for a smooth, physical-feeling motion.
-    this.current.lerp(this.target, Math.min(1, deltaSeconds * 4));
+    this.current.lerp(this.target, Math.min(1, deltaSeconds * this.config.easing));
     this.key.position.set(this.current.x, this.current.y, this.lightDistance);
   }
 

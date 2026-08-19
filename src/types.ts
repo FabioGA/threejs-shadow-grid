@@ -58,6 +58,13 @@ export interface LightConfig {
   sweepSpeed?: number;
   /** Ambient fill light amount (0-1) so shadowed faces aren't pure black. Default: 0.45. */
   ambient?: number;
+  /**
+   * How quickly the light eases toward its target position - the pointer
+   * (when following it) or the current auto-sweep waypoint (on touch).
+   * Higher = snappier/more immediate response, lower = smoother/slower,
+   * more languid motion. Default: 4.
+   */
+  easing?: number;
 }
 
 /**

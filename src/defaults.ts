@@ -76,4 +76,5 @@ export const DEFAULT_LIGHT: Required<LightConfig> = {
   autoSweepOnTouch: true,
   sweepSpeed: 1,
   ambient: 0.45,
+  easing: 4,
 };

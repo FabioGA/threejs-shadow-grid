@@ -121,6 +121,7 @@ light: {
   autoSweepOnTouch: true,  // auto-drift when there's no pointer activity - default true
   sweepSpeed: 1,         // speed multiplier for that drift (higher = faster, more frequent waypoint changes) - default 1
   ambient: 0.45,          // ambient fill light (0-1) so shadows aren't pure black - default 0.45
+  easing: 4,              // how quickly the light eases toward the pointer/sweep target - higher = snappier - default 4
 }
 ```
 
