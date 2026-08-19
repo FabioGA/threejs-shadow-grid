@@ -3,14 +3,19 @@ import { LIGHT_STYLE_PRESETS } from "./defaults";
 import type { LightConfig } from "./types";
 
 const TWO_PI = Math.PI * 2;
+/** Range (seconds, before the sweepSpeed multiplier) between auto-sweep waypoint changes. */
+const SWEEP_WAYPOINT_MIN_DURATION = 1.4;
+const SWEEP_WAYPOINT_MAX_DURATION = 3.6;
 
 /**
  * Owns the single shadow-casting light (a directional "sun" whose angle
  * shifts with the pointer - cheap to render even with hundreds of grid
  * instances, unlike a per-instance point light) plus an ambient fill
  * light. Drives the light's angle from either the pointer (mouse/pen) or,
- * on touch/no-pointer devices, a slow automatic sweep so the "moving
- * shadow" effect is never just a static freeze-frame.
+ * on touch/no-pointer devices, an automatic drift toward randomized
+ * waypoints (eased rather than snapped to) so the "moving shadow" effect
+ * reads as a natural, non-repeating flow instead of a static freeze-frame
+ * or an obviously looping path.
  *
  * This is the piece that lets non-lighting-experts get good results: the
  * public surface is just a "style" preset plus an intensity dial, never a
@@ -24,7 +29,8 @@ export class LightRig {
   private usingPointer = false;
   private target = new THREE.Vector2(0, 0);
   private current = new THREE.Vector2(0, 0);
-  private sweepT = Math.random() * TWO_PI;
+  private sweepWaypoint = new THREE.Vector2(0, 0);
+  private sweepWaypointTimer = 0;
   private reach = 4.5;
   private lightDistance = 7;
   private onPointerMove = (e: PointerEvent) => this.handlePointerMove(e);
@@ -52,6 +58,7 @@ export class LightRig {
     container.addEventListener("pointerleave", this.onPointerLeave);
 
     this.applyStyle();
+    this.pickNextSweepWaypoint();
   }
 
   updateConfig(config: Required<LightConfig>) {
@@ -104,13 +111,30 @@ export class LightRig {
     this.usingPointer = false;
   }
 
+  /**
+   * Picks a new random auto-sweep waypoint (angle + radius, both randomized
+   * rather than a fixed circular path) and a randomized time-to-live for
+   * it, so the drift never settles into an obviously repeating loop.
+   * sweepSpeed scales how often waypoints change (i.e. how fast it drifts).
+   */
+  private pickNextSweepWaypoint() {
+    const angle = Math.random() * TWO_PI;
+    const radiusFactor = 0.25 + Math.random() * 0.75;
+    const radius = this.reach * this.config.intensity * radiusFactor;
+    this.sweepWaypoint.set(Math.cos(angle) * radius, Math.sin(angle) * radius * 0.7);
+
+    const duration = SWEEP_WAYPOINT_MIN_DURATION + Math.random() * (SWEEP_WAYPOINT_MAX_DURATION - SWEEP_WAYPOINT_MIN_DURATION);
+    this.sweepWaypointTimer = duration / Math.max(0.05, this.config.sweepSpeed);
+  }
+
   /** Advances the auto-sweep (if active) and eases the light toward its target. Call once per frame. */
   update(deltaSeconds: number) {
     if (!this.usingPointer && this.config.autoSweepOnTouch) {
-      this.sweepT += deltaSeconds * 0.35 * this.config.sweepSpeed;
-      const x = Math.cos(this.sweepT) * this.reach * this.config.intensity;
-      const y = Math.sin(this.sweepT * 1.3) * this.reach * 0.7 * this.config.intensity;
-      this.target.set(x, y);
+      this.sweepWaypointTimer -= deltaSeconds;
+      if (this.sweepWaypointTimer <= 0) {
+        this.pickNextSweepWaypoint();
+      }
+      this.target.copy(this.sweepWaypoint);
     }
 
     // Ease toward the target for a smooth, physical-feeling motion.

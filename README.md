@@ -8,7 +8,7 @@ It's framework-agnostic - a plain TypeScript class with no React/Vue/etc depende
 
 - Fills its container completely and re-fills automatically on resize (auto-computed columns/rows based on a cell-size you set, not a fixed count).
 - Works as a full-page fixed background or as a smaller contained box; either way the grid stays full-bleed while page/container content scrolls over it.
-- Mouse-driven shadow: a single directional light follows the pointer. On touch devices (or before the first pointer move) it drifts on a slow automatic sweep instead of sitting static.
+- Mouse-driven shadow: a single directional light follows the pointer. On touch devices (or before the first pointer move) it drifts naturally between randomized waypoints (speed configurable) instead of sitting static or looping a fixed path.
 - Three simplified light presets (`soft` / `medium` / `hard`) so you never have to touch raw Three.js lighting values.
 - Matte, physically-based material (near-zero metalness, high roughness) so objects read as flat color, not plastic/metal.
 - Grid or randomized (jittered position) arrangement, plus independent rotation and size controls (fixed or randomized).
@@ -119,7 +119,7 @@ light: {
   style: "hard",       // soft | medium | hard - default "medium"
   intensity: 1,         // 0-1+, how far the shadow swings with the pointer - default 1
   autoSweepOnTouch: true,  // auto-drift when there's no pointer activity - default true
-  sweepSpeed: 1,         // speed multiplier for that drift - default 1
+  sweepSpeed: 1,         // speed multiplier for that drift (higher = faster, more frequent waypoint changes) - default 1
   ambient: 0.45,          // ambient fill light (0-1) so shadows aren't pure black - default 0.45
 }
 ```
@@ -128,7 +128,7 @@ light: {
 - **medium**: balanced, the default.
 - **hard**: small, crisp, high-contrast shadows - punchy and graphic.
 
-The light starts in "auto sweep" mode and switches to following the pointer the moment it detects real pointer movement (mouse, pen, or a touch drag); moving the pointer off the container drops back to sweeping rather than freezing the shadow in its last spot. That also means touch-only visitors - who typically never fire a hover-style pointer move - simply get the sweep the whole time.
+The light starts in "auto sweep" mode and switches to following the pointer the moment it detects real pointer movement (mouse, pen, or a touch drag); moving the pointer off the container drops back to sweeping rather than freezing the shadow in its last spot. That also means touch-only visitors - who typically never fire a hover-style pointer move - simply get the sweep the whole time. The sweep drifts toward a new randomized waypoint every couple of seconds (eased, not snapped), so it reads as organic movement rather than a fixed circular/repeating path; `sweepSpeed` controls how often those waypoints change.
 
 ## Getting STL models
 
