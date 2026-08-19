@@ -86,6 +86,10 @@ export const LIGHT_STYLE_PRESETS: Record<
 export const MIN_SHADOW_RADIUS = 0.3;
 export const MAX_SHADOW_RADIUS = 6.5;
 
+/** Clamp range for `LightConfig.shadowMapSize` (perf guard - GPU memory grows with the square of this). */
+export const MIN_SHADOW_MAP_SIZE = 256;
+export const MAX_SHADOW_MAP_SIZE = 4096;
+
 export const DEFAULT_LIGHT: Required<LightConfig> = {
   style: "medium",
   intensity: 1,
@@ -97,5 +101,8 @@ export const DEFAULT_LIGHT: Required<LightConfig> = {
   // Actual default is style-dependent (see LIGHT_STYLE_PRESETS.defaultHardness);
   // resolveLight() always recomputes this unless the caller sets hardness explicitly.
   hardness: 0.5,
+  // Actual default is style-dependent (see LIGHT_STYLE_PRESETS.shadowMapSize);
+  // resolveLight() always recomputes this unless the caller sets shadowMapSize explicitly.
+  shadowMapSize: 1536,
   mode: "auto",
 };

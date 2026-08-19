@@ -45,8 +45,21 @@ export class LightRig {
   private sweepPhaseY = Math.random() * TWO_PI;
   private reach = 4.5;
   private lightDistance = 7;
-  private onPointerMove = (e: PointerEvent) => this.handlePointerMove(e);
-  private onPointerLeave = () => this.handlePointerLeave();
+  // Listened on window/document rather than the container: the container is
+  // typically a full-bleed background sitting *behind* real page content
+  // (z-index-wise), so page content stacked on top of it - text, the demo's
+  // own control panel, anything - constantly "steals" the browser's
+  // hit-test target as the pointer crosses it. A listener scoped to the
+  // container only fires while the container itself is the topmost element
+  // under the pointer, so on a typical page that's a small, gappy sliver of
+  // the viewport - not the reliable "shadow follows the mouse anywhere on
+  // the page" effect this is meant to be. Listening on window/document and
+  // computing inside/outside from the container's own bounding rect (rather
+  // than from native pointerenter/pointerleave, which fire off the same
+  // occluded hit-test) sidesteps that entirely and also naturally covers a
+  // full-viewport container, where "inside" is just "anywhere on screen".
+  private onWindowPointerMove = (e: PointerEvent) => this.handleWindowPointerMove(e);
+  private onDocumentPointerLeave = () => this.handleDocumentPointerLeave();
 
   constructor(container: HTMLElement, config: Required<LightConfig>) {
     this.container = container;
@@ -59,16 +72,17 @@ export class LightRig {
 
     // With mode "auto" (the default), starts in "auto sweep" mode (no
     // pointer activity has happened yet, so there's nothing to follow); the
-    // first real pointermove - mouse, pen, or a touch drag - switches to
-    // "follow the pointer" mode, and leaving the container drops back to
-    // sweeping instead of freezing the light in place. This naturally
-    // covers touch devices too: if they never fire a hover-style
-    // pointermove, the rig just keeps sweeping. mode "pointer"/"sweep" pin
-    // one of those two behaviors regardless of actual pointer activity.
+    // first real pointermove - mouse, pen, or a touch drag - over the
+    // container switches to "follow the pointer" mode, and moving off the
+    // container (or off the page entirely) drops back to sweeping instead
+    // of freezing the light in place. This naturally covers touch devices
+    // too: if they never fire a hover-style pointermove, the rig just keeps
+    // sweeping. mode "pointer"/"sweep" pin one of those two behaviors
+    // regardless of actual pointer activity/position.
     this.usingPointer = config.mode === "pointer";
 
-    container.addEventListener("pointermove", this.onPointerMove);
-    container.addEventListener("pointerleave", this.onPointerLeave);
+    window.addEventListener("pointermove", this.onWindowPointerMove);
+    document.addEventListener("pointerleave", this.onDocumentPointerLeave);
 
     this.applyStyle();
   }
@@ -102,8 +116,8 @@ export class LightRig {
     this.reach = preset.distance * 0.55;
     this.lightDistance = preset.distance;
 
-    if (this.key.shadow.mapSize.width !== preset.shadowMapSize) {
-      this.key.shadow.mapSize.set(preset.shadowMapSize, preset.shadowMapSize);
+    if (this.key.shadow.mapSize.width !== this.config.shadowMapSize) {
+      this.key.shadow.mapSize.set(this.config.shadowMapSize, this.config.shadowMapSize);
       this.key.shadow.map?.dispose();
       (this.key.shadow as unknown as { map: null }).map = null;
     }
@@ -112,20 +126,37 @@ export class LightRig {
     this.ambient.intensity = Math.max(0, this.config.ambient + preset.ambientBoost);
   }
 
-  private handlePointerMove(e: PointerEvent) {
+  private handleWindowPointerMove(e: PointerEvent) {
     if (this.config.mode === "sweep") return;
-    this.usingPointer = true;
+
     const rect = this.container.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
+
+    const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+
+    if (this.config.mode === "pointer") {
+      // Pinned to pointer-follow: keep tracking the pointer everywhere on
+      // the page, not just while it happens to sit over the container -
+      // "never fall back to sweeping" per the mode's contract.
+      this.usingPointer = true;
+    } else if (inside) {
+      this.usingPointer = true;
+    } else {
+      // mode "auto", pointer outside the container - drop back to the
+      // automatic sweep rather than freezing the light at its last spot.
+      this.usingPointer = false;
+      return;
+    }
+
     const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
     this.target.set(nx, -ny).multiplyScalar(this.reach * this.config.intensity);
   }
 
-  private handlePointerLeave() {
-    // Drop back to the automatic sweep once the pointer leaves the
-    // container, rather than freezing the light at its last spot - unless
-    // mode "pointer" pins it in place regardless.
+  private handleDocumentPointerLeave() {
+    // The pointer left the page/viewport entirely - drop back to the
+    // automatic sweep rather than freezing the light at its last spot,
+    // unless mode "pointer" pins it in place regardless.
     if (this.config.mode === "pointer") return;
     this.usingPointer = false;
   }
@@ -156,8 +187,8 @@ export class LightRig {
   }
 
   dispose() {
-    this.container.removeEventListener("pointermove", this.onPointerMove);
-    this.container.removeEventListener("pointerleave", this.onPointerLeave);
+    window.removeEventListener("pointermove", this.onWindowPointerMove);
+    document.removeEventListener("pointerleave", this.onDocumentPointerLeave);
     this.key.shadow.map?.dispose();
   }
 }

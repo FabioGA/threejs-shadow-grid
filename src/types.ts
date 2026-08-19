@@ -92,6 +92,18 @@ export interface LightConfig {
    */
   hardness?: number;
   /**
+   * Shadow map resolution, in texels per side (clamped to 256-4096). Higher
+   * values give crisper, less pixelated/blocky shadow edges - especially
+   * noticeable on larger containers or grids with many cells spread across
+   * the shadow frustum - at the cost of more GPU memory and render time.
+   * Left unset, it defaults to a value matching whichever `style` is active
+   * (soft: 1024, medium: 1536, hard: 2048), so setting only `style` behaves
+   * exactly as before - set `shadowMapSize` directly for finer control, e.g.
+   * pushing past "hard"'s 2048 up to a crisper 4096 without changing the
+   * light's intensity/distance/softness.
+   */
+  shadowMapSize?: number;
+  /**
    * Forces the light's input mode instead of the default hybrid behavior:
    * - "auto" (default) - starts in touch auto-sweep, switches to following
    *   the pointer on the first real pointer movement, and back to sweeping

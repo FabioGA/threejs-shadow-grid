@@ -423,11 +423,10 @@
             <fieldset>
               <legend>Light</legend>
               <div class="field">
-                <label for="lightMode">input mode</label>
+                <label for="lightMode">movement</label>
                 <select id="lightMode">
-                  <option value="auto" selected>auto</option>
-                  <option value="pointer">mouse hover</option>
-                  <option value="sweep">static touch</option>
+                  <option value="sweep" selected>automatic movement</option>
+                  <option value="pointer">follow mouse</option>
                 </select>
               </div>
               <div class="field">
@@ -437,6 +436,11 @@
                   <option value="medium" selected>medium</option>
                   <option value="hard">hard</option>
                 </select>
+              </div>
+              <div class="field">
+                <label for="shadowMapSize">shadow quality</label>
+                <input type="range" id="shadowMapSize" min="512" max="4096" step="256" value="1536" />
+                <span class="val" id="shadowMapSize-val">1536px</span>
               </div>
               <div class="field">
                 <label for="lightIntensity">intensity</label>
@@ -652,7 +656,7 @@
         shadows: true,
         maxPixelRatio: 2,
         seed: 1337,
-        lightMode: "auto",
+        lightMode: "sweep",
         lightStyle: "medium",
         lightIntensity: 1,
         autoSweepOnTouch: true,
@@ -661,6 +665,7 @@
         easing: 4,
         lightColor: "#ffffff",
         lightHardness: 0.5,
+        shadowMapSize: 1536,
       };
       const state = {
         ...defaultState,
@@ -705,6 +710,7 @@
             easing: s.easing,
             color: s.lightColor,
             hardness: s.lightHardness,
+            shadowMapSize: s.shadowMapSize,
           },
           maxPixelRatio: s.maxPixelRatio,
           shadows: s.shadows,
@@ -753,6 +759,7 @@ const grid = new ShadowGrid({
     easing: ${s.easing},
     color: "${s.lightColor}",
     hardness: ${s.lightHardness},
+    shadowMapSize: ${s.shadowMapSize},
   },
   maxPixelRatio: ${s.maxPixelRatio},
   shadows: ${s.shadows},
@@ -889,6 +896,7 @@ const grid = new ShadowGrid({
       bindRange("easing", "easing", (v) => v.toFixed(1));
       bindColor("lightColor", "lightColor");
       bindRange("lightHardness", "lightHardness", (v) => v.toFixed(2));
+      bindRange("shadowMapSize", "shadowMapSize", (v) => `${v}px`);
 
       document.getElementById("copy-btn").addEventListener("click", async () => {
         const btn = document.getElementById("copy-btn");

@@ -25,6 +25,8 @@ import {
   DEFAULT_SEED,
   DEFAULT_SHADOWS,
   LIGHT_STYLE_PRESETS,
+  MAX_SHADOW_MAP_SIZE,
+  MIN_SHADOW_MAP_SIZE,
 } from "./defaults";
 
 function resolveContainer(container: HTMLElement | string): HTMLElement {
@@ -42,7 +44,9 @@ function resolveLight(light: GridConfig["light"]): Required<LightConfig> {
   // hardness's real default is style-dependent (soft/medium/hard read as
   // increasingly crisp shadows) unless the caller sets it explicitly.
   const hardness = partial.hardness ?? LIGHT_STYLE_PRESETS[style].defaultHardness;
-  return { ...DEFAULT_LIGHT, ...partial, style, hardness };
+  const rawShadowMapSize = partial.shadowMapSize ?? LIGHT_STYLE_PRESETS[style].shadowMapSize;
+  const shadowMapSize = Math.round(Math.min(MAX_SHADOW_MAP_SIZE, Math.max(MIN_SHADOW_MAP_SIZE, rawShadowMapSize)));
+  return { ...DEFAULT_LIGHT, ...partial, style, hardness, shadowMapSize };
 }
 
 /** Resolves the rotation shorthand (bare axis value = Y-axis only) into an explicit x/y/z object. */
