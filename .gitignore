@@ -5,3 +5,6 @@ dist
 npm-debug.log*
 .vscode
 scripts/*.png
+
+# macOS custom folder icon artifacts (created by Google Drive sync)
+Icon?
