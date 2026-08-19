@@ -14,6 +14,13 @@ export type ModelSource = string | ArrayBuffer;
 export type Arrangement = "grid" | "random";
 
 /**
+ * Per-object rotation around the vertical (Y) axis, in degrees.
+ * - A number -> every object gets that exact rotation.
+ * - `"random"` -> each object gets an independent random rotation (0-360°).
+ */
+export type RotationConfig = number | "random";
+
+/**
  * Simplified light presets. Internally these map to a light intensity,
  * distance and shadow softness (penumbra / shadow map blur radius) so
  * users never have to touch raw Three.js lighting values.
@@ -77,10 +84,16 @@ export interface GridConfig {
    * each loaded model is normalized to. Default: 120.
    */
   objectSize?: number;
-  /** "grid" = perfectly aligned rows/columns. "random" = jittered position/rotation/scale per cell. Default: "grid". */
+  /** "grid" = perfectly aligned rows/columns. "random" = jittered position per cell. Default: "grid". */
   arrangement?: Arrangement;
-  /** 0-1 amount of position/rotation/scale jitter applied when arrangement is "random". Default: 0.4. */
+  /** 0-1 amount of position jitter applied when arrangement is "random". Default: 0.4. */
   jitter?: number;
+  /**
+   * Object rotation around the vertical axis, in degrees: a fixed number
+   * applies to every object, or `"random"` gives each object an
+   * independent random rotation. Independent of `arrangement`. Default: 0.
+   */
+  rotation?: RotationConfig;
   /**
    * Extra rows/columns rendered beyond the visible edges, as a fraction of
    * the viewport (avoids visible pop-in while the camera/container moves).

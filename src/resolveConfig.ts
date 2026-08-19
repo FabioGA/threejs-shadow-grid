@@ -11,6 +11,7 @@ import {
   DEFAULT_MAX_PIXEL_RATIO,
   DEFAULT_OBJECT_SIZE,
   DEFAULT_OVERSCAN,
+  DEFAULT_ROTATION,
   DEFAULT_SEED,
   DEFAULT_SHADOWS,
 } from "./defaults";
@@ -49,6 +50,7 @@ export function resolveConfig(config: GridConfig): ResolvedGridConfig {
     objectSize: config.objectSize ?? DEFAULT_OBJECT_SIZE,
     arrangement: config.arrangement ?? DEFAULT_ARRANGEMENT,
     jitter: config.jitter ?? DEFAULT_JITTER,
+    rotation: config.rotation ?? DEFAULT_ROTATION,
     overscan: config.overscan ?? DEFAULT_OVERSCAN,
     maxInstances: config.maxInstances ?? DEFAULT_MAX_INSTANCES,
     colors: matchBackground && backgroundColor !== "transparent" ? backgroundColor : config.colors ?? DEFAULT_COLORS,

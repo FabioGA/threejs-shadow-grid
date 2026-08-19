@@ -90,7 +90,8 @@ export class GridBuilder {
         const jitterX = (rng() - 0.5) * jitter * cellSizeUnits;
         const jitterY = (rng() - 0.5) * jitter * cellSizeUnits;
         const jitterZ = (rng() - 0.5) * jitter * cellSizeUnits * 0.6;
-        const rotY = config.arrangement === "random" ? rng() * Math.PI * 2 : 0;
+        const rotY =
+          config.rotation === "random" ? rng() * Math.PI * 2 : (config.rotation * Math.PI) / 180;
         const rotZ = config.arrangement === "random" ? (rng() - 0.5) * jitter * 0.6 : 0;
         const scale = 1 + (config.arrangement === "random" ? (rng() - 0.5) * jitter * 0.5 : 0);
 

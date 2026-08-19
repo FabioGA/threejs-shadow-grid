@@ -11,7 +11,7 @@ It's framework-agnostic - a plain TypeScript class with no React/Vue/etc depende
 - Mouse-driven shadow: a single directional light follows the pointer. On touch devices (or before the first pointer move) it drifts on a slow automatic sweep instead of sitting static.
 - Three simplified light presets (`soft` / `medium` / `hard`) so you never have to touch raw Three.js lighting values.
 - Matte, physically-based material (near-zero metalness, high roughness) so objects read as flat color, not plastic/metal.
-- Grid or randomized (jittered position/rotation/scale) arrangement.
+- Grid or randomized (jittered position) arrangement, plus independent rotation and size controls (fixed or randomized).
 - Single color, or a palette that's randomly assigned per object.
 - Loads one or more STL files; each grid cell randomly picks one when you pass several.
 - Ships as ESM + CJS + full TypeScript types.
@@ -94,8 +94,9 @@ function ShadowGridBackground(props: GridConfig) {
 | `models` | `string \| string[]` | required | STL URL(s). Multiple models are randomly distributed across cells. |
 | `cellSize` | `number` (px) | `220` | Distance between neighboring object centers. Columns/rows are always auto-computed from this + the container size - this is what makes the grid "infinite" (it always fills the space). |
 | `objectSize` | `number` (px) | `120` | Each model is centered and scaled so its largest bounding-box dimension equals this. Lets you mix STL files of wildly different native scales. |
-| `arrangement` | `"grid" \| "random"` | `"grid"` | `"random"` jitters position/rotation/scale per cell (amount controlled by `jitter`). |
+| `arrangement` | `"grid" \| "random"` | `"grid"` | `"random"` jitters position per cell (amount controlled by `jitter`). |
 | `jitter` | `number` (0-1) | `0.4` | Only used when `arrangement` is `"random"`. |
+| `rotation` | `number \| "random"` (degrees) | `0` | Rotation around the vertical axis. A fixed number applies to every object; `"random"` gives each object an independent random rotation. Independent of `arrangement`. |
 | `overscan` | `number` (0-1) | `0.15` | Extra rows/columns rendered past the edges, to avoid pop-in. Rarely needs changing. |
 | `maxInstances` | `number` | `4000` | Safety cap on total rendered objects (perf guard for very small cell sizes / huge containers). |
 | `colors` | `string \| string[]` | `"#c9ccd6"` | A single CSS color applies to every object. An array (e.g. `["#ff4d4d", "#4d79ff"]`) makes each object randomly pick one color from the list. Ignored if `matchBackground` is `true`. |
