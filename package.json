@@ -1,0 +1,56 @@
+{
+  "name": "threejs-shadow-grid",
+  "version": "0.1.0",
+  "description": "A configurable, infinitely-tiling 3D object grid background for Three.js, with a mouse/touch-driven light that casts moving shadows.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "three.js",
+    "threejs",
+    "3d",
+    "background",
+    "stl",
+    "grid",
+    "shadow",
+    "webgl"
+  ],
+  "author": "Fabio Garcia",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FabioGA/threejs-shadow-grid.git"
+  },
+  "peerDependencies": {
+    "three": ">=0.150.0"
+  },
+  "devDependencies": {
+    "three": "^0.169.0",
+    "@types/three": "^0.169.0",
+    "typescript": "^5.6.0",
+    "tsup": "^8.3.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
