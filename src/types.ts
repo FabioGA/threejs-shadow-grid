@@ -208,7 +208,13 @@ export interface GridConfig {
    * brighter highlights from the light. Default: 0.
    */
   hardness?: number;
-  /** CSS color, or "transparent" to let the page background show through. Default: "#0a0a0f". */
+  /**
+   * CSS color, or "transparent" to let the page's own background show
+   * through. In transparent mode a shadow-only backdrop still catches the
+   * moving shadow (darkening the page background where shadowed), so
+   * shadows stay visible while the unshadowed color remains exactly
+   * whatever the page's CSS background is. Default: "#0a0a0f".
+   */
   backgroundColor?: string;
   /**
    * When true, objects are forced to exactly the same color as

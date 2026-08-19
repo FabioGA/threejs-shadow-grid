@@ -70,6 +70,23 @@ new ShadowGrid({
 
 Same class, same API - it just fills whatever box you give it. If that box scrolls internally (`overflow: auto`) the grid stays put behind the scrolling content, the same way the full-page recipe does.
 
+### Recipe C: matching an exact background color
+
+`backgroundColor` normally paints a backdrop plane that's *lit* by the scene's own light, so its rendered shade shifts as the shadow moves and won't sit at an exact hex value. To match a precise color (e.g. copied from another site's CSS), set the color as a normal CSS `background-color` on the container and pass `backgroundColor: "transparent"` instead - the grid then only draws a shadow-only backdrop that darkens your CSS background where shadowed, leaving the rest exactly as you set it:
+
+```html
+<div id="bg" style="position: fixed; inset: 0; z-index: -1; background-color: rgb(23, 39, 19);"></div>
+```
+
+```ts
+new ShadowGrid({
+  container: "#bg",
+  models: "/models/logo-mark.stl",
+  backgroundColor: "transparent",
+  light: "medium",
+});
+```
+
 ### React
 
 There's no React wrapper package (by design - see "Why framework-agnostic" below), but wrapping it is a few lines:
@@ -102,7 +119,7 @@ function ShadowGridBackground(props: GridConfig) {
 | `maxInstances` | `number` | `4000` | Safety cap on total rendered objects (perf guard for very small cell sizes / huge containers). |
 | `colors` | `string \| string[] \| { color, weight }[]` | `"#c9ccd6"` | A single CSS color applies to every object. A plain array (e.g. `["#ff4d4d", "#4d79ff"]`) makes each object independently pick one color at random with equal odds. An array of `{ color, weight }` instead partitions the *exact* current instance count proportionally to weight (e.g. weights 70/30 -> ~70%/30% split, not just a 70/30 chance per object) - see "Weighted palettes" below. Ignored if `matchBackground` is `true`. |
 | `hardness` | `number` (0-1) | `0` | Object surface hardness/reflectivity - `0` is soft matte rubber, `1` is hard, glossy, and more reflective. Continuously blends roughness, metalness, and clearcoat. |
-| `backgroundColor` | `string \| "transparent"` | `"#0a0a0f"` | `"transparent"` lets the page background show through (objects then only shadow each other slightly, since there's no backdrop to catch shadows). |
+| `backgroundColor` | `string \| "transparent"` | `"#0a0a0f"` | `"transparent"` lets the page's own background show through. A shadow-only backdrop still catches the moving shadow (darkening the page background where shadowed), so shadows stay visible and the unshadowed color is exactly whatever the page's CSS background is - useful when you need the background to match a specific color exactly, since a solid `backgroundColor` is lit (and so shaded/shadowed) by the scene's own light rather than rendered flat. |
 | `matchBackground` | `boolean` | `false` | When `true`, forces object color to exactly match `backgroundColor` (ignoring `colors`), so objects are only revealed by their cast shadows. No effect if `backgroundColor` is `"transparent"`. |
 | `seed` | `number` | fixed internal default | Seeds the "random" choices (arrangement jitter, palette pick, model pick) so results are reproducible instead of using `Math.random()`. |
 | `light` | `LightStyle \| LightConfig` | `"medium"` | See below. |

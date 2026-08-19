@@ -72,15 +72,15 @@ export class ShadowGrid {
     this.lightRig = new LightRig(this.container, this.config.light);
     this.scene.add(this.lightRig.key, this.lightRig.key.target, this.lightRig.ambient);
 
-    if (this.config.backgroundColor !== "transparent") {
-      this.backdrop = new THREE.Mesh(
-        new THREE.PlaneGeometry(1, 1),
-        new THREE.MeshStandardMaterial({ color: this.config.backgroundColor, roughness: 1 })
-      );
-      this.backdrop.receiveShadow = true;
-      this.backdrop.position.z = -1;
-      this.scene.add(this.backdrop);
-    }
+    this.backdrop = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1),
+      this.config.backgroundColor === "transparent"
+        ? new THREE.ShadowMaterial({ opacity: this.shadowOpacity() })
+        : new THREE.MeshStandardMaterial({ color: this.config.backgroundColor, roughness: 1 })
+    );
+    this.backdrop.receiveShadow = true;
+    this.backdrop.position.z = -1;
+    this.scene.add(this.backdrop);
 
     this.resizeObserver = new ResizeObserver(() => this.handleResize());
     this.resizeObserver.observe(this.container);
@@ -146,6 +146,15 @@ export class ShadowGrid {
     this.gridBuilder.rebuild(this.viewportWidthUnits, this.viewportHeightUnits, this.config);
   }
 
+  /**
+   * Opacity for the transparent-mode shadow-only backdrop, derived from the
+   * ambient light so shadow contrast stays consistent with how dark shadows
+   * look in opaque/lit mode (lower ambient -> darker shadow).
+   */
+  private shadowOpacity(): number {
+    return THREE.MathUtils.clamp(1 - this.config.light.ambient, 0, 1);
+  }
+
   private async loadAndBuild() {
     const token = ++this.loadToken;
     const objectSizeUnits = maxObjectSize(this.config.objectSize) / PIXELS_PER_UNIT;
@@ -185,11 +194,23 @@ export class ShadowGrid {
 
     if (this.config.backgroundColor !== "transparent") {
       this.scene.background = new THREE.Color(this.config.backgroundColor);
-      if (this.backdrop) {
-        (this.backdrop.material as THREE.MeshStandardMaterial).color.set(this.config.backgroundColor);
-      }
     } else {
       this.scene.background = null;
+    }
+
+    if (this.backdrop) {
+      const wantsShadowMaterial = this.config.backgroundColor === "transparent";
+      const hasShadowMaterial = this.backdrop.material instanceof THREE.ShadowMaterial;
+      if (wantsShadowMaterial !== hasShadowMaterial) {
+        (this.backdrop.material as THREE.Material).dispose();
+        this.backdrop.material = wantsShadowMaterial
+          ? new THREE.ShadowMaterial({ opacity: this.shadowOpacity() })
+          : new THREE.MeshStandardMaterial({ color: this.config.backgroundColor, roughness: 1 });
+      } else if (!wantsShadowMaterial) {
+        (this.backdrop.material as THREE.MeshStandardMaterial).color.set(this.config.backgroundColor);
+      } else {
+        (this.backdrop.material as THREE.ShadowMaterial).opacity = this.shadowOpacity();
+      }
     }
 
     this.lightRig.updateConfig(this.config.light);

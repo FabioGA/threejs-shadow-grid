@@ -88,7 +88,18 @@
         color-scheme: dark;
       }
 
-      /* --- Playground control panel --- */
+      /*
+        --- Playground control panel ---
+        A plain div, not <details>/<summary>: Chromium (and others) never
+        let a <details>'s non-summary content shrink below its natural
+        content height when the <details> itself is a flex/scroll
+        container - flex-shrink/min-height on that content are silently
+        ignored - so overflow-y: auto below never actually engages and
+        content past max-height just gets clipped with no way to reach it.
+        A div + a toggle button sidesteps that entirely; #playground-toggle
+        below flips the `.open` class that <details> would otherwise have
+        handled via its `open` attribute.
+      */
       #playground-panel {
         position: fixed;
         top: 16px;
@@ -105,9 +116,10 @@
         flex-direction: column;
         overflow: hidden;
       }
-      #playground-panel summary {
+      #playground-panel .panel-summary {
+        all: unset;
+        box-sizing: border-box;
         cursor: pointer;
-        list-style: none;
         padding: 12px 16px;
         display: flex;
         align-items: center;
@@ -115,29 +127,43 @@
         user-select: none;
         font-weight: 600;
         font-size: 0.95rem;
+        font-family: inherit;
+        color: inherit;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        flex: 0 0 auto;
       }
-      #playground-panel summary::-webkit-details-marker { display: none; }
-      #playground-panel summary .hint {
+      #playground-panel .panel-summary .hint {
         font-weight: 400;
         opacity: 0.6;
         font-size: 0.78rem;
       }
-      #playground-panel summary .chev { transition: transform 0.15s ease; opacity: 0.7; }
-      #playground-panel[open] summary .chev { transform: rotate(180deg); }
+      #playground-panel .panel-summary .chev { transition: transform 0.15s ease; opacity: 0.7; }
+      #playground-panel.open .panel-summary .chev { transform: rotate(180deg); }
+      #playground-panel:not(.open) .panel-body { display: none; }
 
       .panel-body {
+        /* flex: 1 1 auto + min-height: 0 is what lets overflow-y: auto
+           actually kick in below - without it, a flex child never shrinks
+           below its content's natural height, so on a short viewport this
+           just grows past #playground-panel's max-height and gets clipped
+           by its `overflow: hidden` with no way to scroll to it. */
+        flex: 1 1 auto;
+        min-height: 0;
         padding: 14px 16px 16px;
         overflow-y: auto;
       }
+      /*
+        Always a single stacked column - controls on top, generated
+        code/JSON below - rather than a side-by-side grid. Side-by-side
+        used to squeeze the code panel into a narrow column that competed
+        for space with the control fieldsets; stacking gives the code/JSON
+        editor the panel's full width, clear of the buttons/controls above.
+      */
       .panel-grid {
         display: grid;
         grid-template-columns: 1fr;
         gap: 16px;
         align-items: start;
-      }
-      @media (min-width: 760px) {
-        .panel-grid { grid-template-columns: minmax(240px, 300px) 1fr; }
       }
 
       fieldset {
@@ -220,7 +246,8 @@
       }
       .code-header button:hover, .reset-btn:hover { background: rgba(255, 255, 255, 0.18); }
       pre#code-output {
-        flex: 1;
+        flex: none;
+        max-height: 260px;
         margin: 0;
         padding: 12px;
         background: #0c0c12;
@@ -232,6 +259,34 @@
         overflow: auto;
         white-space: pre;
       }
+      .code-header-actions { display: flex; gap: 6px; }
+      .json-section {
+        display: flex;
+        flex-direction: column;
+        margin-top: 16px;
+      }
+      #config-json {
+        min-height: 140px;
+        margin: 0;
+        padding: 12px;
+        background: #0c0c12;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #eee;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.74rem;
+        line-height: 1.5;
+        resize: vertical;
+      }
+      #config-json:focus { outline: 1px solid rgba(255, 255, 255, 0.35); }
+      .json-status {
+        min-height: 1.2em;
+        margin-top: 5px;
+        font-size: 0.76rem;
+        opacity: 0.9;
+        color: #8fffc8;
+      }
+      .json-status.error { color: #ff9d9d; }
       .panel-footer {
         display: flex;
         justify-content: flex-end;
@@ -242,11 +297,11 @@
   <body>
     <div id="bg"></div>
 
-    <details id="playground-panel" open>
-      <summary>
+    <div id="playground-panel" class="open">
+      <button type="button" id="playground-toggle" class="panel-summary">
         <span>⚙ Config playground <span class="hint">— controls the background behind this page</span></span>
         <span class="chev">▾</span>
-      </summary>
+      </button>
       <div class="panel-body">
         <div class="panel-grid">
           <div class="panel-controls">
@@ -484,13 +539,26 @@
               <button id="copy-btn" type="button">Copy</button>
             </div>
             <pre id="code-output"><code></code></pre>
+
+            <div class="json-section">
+              <div class="code-header">
+                <span>Config JSON — edit or paste from another view, then Save to apply</span>
+                <div class="code-header-actions">
+                  <button id="json-copy-btn" type="button">Copy</button>
+                  <button id="json-save-btn" type="button">Save</button>
+                </div>
+              </div>
+              <textarea id="config-json" spellcheck="false"></textarea>
+              <div id="json-status" class="json-status"></div>
+            </div>
+
             <div class="panel-footer">
               <button class="reset-btn" id="reset-btn" type="button">Reset to defaults</button>
             </div>
           </div>
         </div>
       </div>
-    </details>
+    </div>
 
     <main>
       <h1>threejs-shadow-grid</h1>
@@ -773,7 +841,14 @@ const grid = new ShadowGrid({
       });
 
       const codeOutput = document.querySelector("#code-output code");
+      const configJson = document.getElementById("config-json");
       let updateScheduled = false;
+
+      /** Keeps the editable JSON box in sync with `state` - unless the user is actively editing it. */
+      function syncConfigJson() {
+        if (document.activeElement === configJson) return;
+        configJson.value = JSON.stringify(buildConfig(state), null, 2);
+      }
 
       function scheduleApply() {
         if (updateScheduled) return;
@@ -782,6 +857,7 @@ const grid = new ShadowGrid({
           updateScheduled = false;
           bg.update(buildConfig(state));
           codeOutput.textContent = generateCode(state);
+          syncConfigJson();
         });
       }
 
@@ -841,6 +917,10 @@ const grid = new ShadowGrid({
         document.getElementById(activeId).classList.toggle("active", mode === activeValue);
         document.getElementById(inactiveId).classList.toggle("active", mode !== activeValue);
       }
+
+      document.getElementById("playground-toggle").addEventListener("click", () => {
+        document.getElementById("playground-panel").classList.toggle("open");
+      });
 
       bindRange("cellSize", "cellSize", (v) => `${v}px`);
       bindSelect("objectSizeMode", "objectSizeMode", (v) =>
@@ -909,11 +989,8 @@ const grid = new ShadowGrid({
         setTimeout(() => (btn.textContent = "Copy"), 1200);
       });
 
-      document.getElementById("reset-btn").addEventListener("click", () => {
-        Object.assign(state, defaultState, {
-          colorPalette: [...defaultState.colorPalette],
-          colorWeights: [...defaultState.colorWeights],
-        });
+      /** Reflects the current `state` onto every playground control (used by both Reset and JSON Save). */
+      function syncControlsFromState() {
         document.querySelectorAll("#playground-panel input, #playground-panel select").forEach((el) => {
           const key = el.id in state ? el.id : null;
           if (!key) return;
@@ -938,10 +1015,122 @@ const grid = new ShadowGrid({
           const input = document.getElementById(id);
           if (input) input.dispatchEvent(new Event("input"));
         });
+      }
+
+      document.getElementById("reset-btn").addEventListener("click", () => {
+        Object.assign(state, defaultState, {
+          colorPalette: [...defaultState.colorPalette],
+          colorWeights: [...defaultState.colorWeights],
+        });
+        syncControlsFromState();
         scheduleApply();
       });
 
+      /** Inverse of `buildConfig`: merges a (possibly partial) GridConfig-shaped object back into playground `state`. */
+      function applyConfigToState(config) {
+        if ("cellSize" in config) state.cellSize = config.cellSize;
+        if ("objectSize" in config) {
+          if (config.objectSize && typeof config.objectSize === "object") {
+            state.objectSizeMode = "range";
+            state.objectSizeMin = config.objectSize.min;
+            state.objectSizeMax = config.objectSize.max;
+          } else {
+            state.objectSizeMode = "fixed";
+            state.objectSize = config.objectSize;
+          }
+        }
+        if ("arrangement" in config) state.arrangement = config.arrangement;
+        if ("jitter" in config) state.jitter = config.jitter;
+        if ("rowOffset" in config) state.rowOffset = config.rowOffset;
+        if (config.rotation) {
+          ["X", "Y", "Z"].forEach((axis) => {
+            const value = config.rotation[axis.toLowerCase()];
+            if (value === undefined) return;
+            if (value === "random") {
+              state[`rotation${axis}Mode`] = "random";
+            } else {
+              state[`rotation${axis}Mode`] = "fixed";
+              state[`rotation${axis}Deg`] = value;
+            }
+          });
+        }
+        if ("overscan" in config) state.overscan = config.overscan;
+        if ("maxInstances" in config) state.maxInstances = config.maxInstances;
+        if ("colors" in config) {
+          if (typeof config.colors === "string") {
+            state.colorsMode = "single";
+            state.colorSingle = config.colors;
+          } else if (Array.isArray(config.colors)) {
+            state.colorsMode = "palette";
+            config.colors.slice(0, 3).forEach((entry, i) => {
+              const isWeighted = entry && typeof entry === "object";
+              state.colorPalette[i] = isWeighted ? entry.color : entry;
+              state.colorWeights[i] = isWeighted ? entry.weight : 1;
+            });
+          }
+        }
+        if ("backgroundColor" in config) {
+          state.backgroundTransparent = config.backgroundColor === "transparent";
+          if (!state.backgroundTransparent) state.backgroundColor = config.backgroundColor;
+        }
+        if ("matchBackground" in config) state.matchBackground = config.matchBackground;
+        if ("hardness" in config) state.hardness = config.hardness;
+        if ("seed" in config) state.seed = config.seed;
+        if (config.light) {
+          const l = config.light;
+          if ("mode" in l) state.lightMode = l.mode;
+          if ("style" in l) state.lightStyle = l.style;
+          if ("intensity" in l) state.lightIntensity = l.intensity;
+          if ("autoSweepOnTouch" in l) state.autoSweepOnTouch = l.autoSweepOnTouch;
+          if ("sweepSpeed" in l) state.sweepSpeed = l.sweepSpeed;
+          if ("ambient" in l) state.ambient = l.ambient;
+          if ("easing" in l) state.easing = l.easing;
+          if ("color" in l) state.lightColor = l.color;
+          if ("hardness" in l) state.lightHardness = l.hardness;
+          if ("shadowMapSize" in l) state.shadowMapSize = l.shadowMapSize;
+        }
+        if ("maxPixelRatio" in config) state.maxPixelRatio = config.maxPixelRatio;
+        if ("shadows" in config) state.shadows = config.shadows;
+      }
+
+      document.getElementById("json-copy-btn").addEventListener("click", async () => {
+        const btn = document.getElementById("json-copy-btn");
+        try {
+          await navigator.clipboard.writeText(configJson.value);
+          btn.textContent = "Copied!";
+        } catch {
+          btn.textContent = "Copy failed";
+        }
+        setTimeout(() => (btn.textContent = "Copy"), 1200);
+      });
+
+      document.getElementById("json-save-btn").addEventListener("click", () => {
+        const statusEl = document.getElementById("json-status");
+        let parsed;
+        try {
+          parsed = JSON.parse(configJson.value);
+        } catch (err) {
+          statusEl.textContent = `Invalid JSON — ${err.message}`;
+          statusEl.classList.add("error");
+          return;
+        }
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          statusEl.textContent = "Config JSON must be an object.";
+          statusEl.classList.add("error");
+          return;
+        }
+        applyConfigToState(parsed);
+        syncControlsFromState();
+        scheduleApply();
+        statusEl.classList.remove("error");
+        statusEl.textContent = "Applied.";
+        setTimeout(() => {
+          if (statusEl.textContent === "Applied.") statusEl.textContent = "";
+        }, 1500);
+      });
+
       codeOutput.textContent = generateCode(state);
+      syncConfigJson();
 
       window.__grids = { bg, box };
     </script>
