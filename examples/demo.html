@@ -491,11 +491,11 @@
     <main>
       <h1>threejs-shadow-grid</h1>
       <p>
-        This full-page background is a grid of two STL models (a cube and an
-        octahedron), tiled to fill the viewport. Move your mouse around -
-        the shadows should shift to follow it. Scroll down to confirm the
-        background stays fixed and full-bleed while this content scrolls
-        over it.
+        This full-page background is a grid of three basic STL models (a
+        cube, an octahedron, and a cone), tiled to fill the viewport. Move
+        your mouse around - the shadows should shift to follow it. Scroll
+        down to confirm the background stays fixed and full-bleed while
+        this content scrolls over it.
       </p>
       <p>
         Open the "Config playground" panel (top-right) to try every option
@@ -528,7 +528,7 @@
     <script type="module">
       import { ShadowGrid } from "threejs-shadow-grid";
 
-      const models = ["/examples/models/cube.stl", "/examples/models/octahedron.stl"];
+      const models = ["/examples/models/cube.stl", "/examples/models/octahedron.stl", "/examples/models/cone.stl"];
 
       const box = new ShadowGrid({
         container: "#box-demo",

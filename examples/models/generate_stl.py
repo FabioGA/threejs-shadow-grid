@@ -1,4 +1,5 @@
-"""Generates a couple of tiny binary STL test models (no external deps)."""
+"""Generates a few tiny binary STL test models (no external deps)."""
+import math
 import struct
 
 def write_stl(path, triangles):
@@ -51,6 +52,24 @@ def octahedron_triangles(size=1.0):
         tris.append((bottom, b, a))
     return tris
 
+def cone_triangles(size=1.0, segments=12):
+    radius = size * 0.55
+    height = size * 0.9
+    apex = (0, height / 2, 0)
+    base_center = (0, -height / 2, 0)
+    ring = [
+        (radius * math.cos(2 * math.pi * i / segments), -height / 2, radius * math.sin(2 * math.pi * i / segments))
+        for i in range(segments)
+    ]
+    tris = []
+    for i in range(segments):
+        a = ring[i]
+        b = ring[(i + 1) % segments]
+        tris.append((apex, a, b))
+        tris.append((base_center, b, a))
+    return tris
+
 write_stl("cube.stl", cube_triangles(1.6))
 write_stl("octahedron.stl", octahedron_triangles(1.6))
+write_stl("cone.stl", cone_triangles(1.6))
 print("done")
