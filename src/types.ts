@@ -94,6 +94,13 @@ export interface GridConfig {
   colors?: ColorConfig;
   /** CSS color, or "transparent" to let the page background show through. Default: "#0a0a0f". */
   backgroundColor?: string;
+  /**
+   * When true, objects are forced to exactly the same color as
+   * `backgroundColor` (ignoring `colors`), so objects are only revealed by
+   * the shadows they cast rather than by any color contrast. Has no effect
+   * if `backgroundColor` is `"transparent"`. Default: false.
+   */
+  matchBackground?: boolean;
   /** Deterministic seed for random color/arrangement picks. Default: a fixed internal seed. */
   seed?: number;
 

@@ -6,6 +6,7 @@ import {
   DEFAULT_COLORS,
   DEFAULT_JITTER,
   DEFAULT_LIGHT,
+  DEFAULT_MATCH_BACKGROUND,
   DEFAULT_MAX_INSTANCES,
   DEFAULT_MAX_PIXEL_RATIO,
   DEFAULT_OBJECT_SIZE,
@@ -38,6 +39,9 @@ export function resolveConfig(config: GridConfig): ResolvedGridConfig {
     throw new Error("[threejs-shadow-grid] config.models is required (an STL URL, or an array of them).");
   }
 
+  const backgroundColor = config.backgroundColor ?? DEFAULT_BACKGROUND_COLOR;
+  const matchBackground = config.matchBackground ?? DEFAULT_MATCH_BACKGROUND;
+
   const resolved: ResolvedGridConfig = {
     models: toModelArray(config.models),
     container: resolveContainer(config.container),
@@ -47,8 +51,9 @@ export function resolveConfig(config: GridConfig): ResolvedGridConfig {
     jitter: config.jitter ?? DEFAULT_JITTER,
     overscan: config.overscan ?? DEFAULT_OVERSCAN,
     maxInstances: config.maxInstances ?? DEFAULT_MAX_INSTANCES,
-    colors: config.colors ?? DEFAULT_COLORS,
-    backgroundColor: config.backgroundColor ?? DEFAULT_BACKGROUND_COLOR,
+    colors: matchBackground && backgroundColor !== "transparent" ? backgroundColor : config.colors ?? DEFAULT_COLORS,
+    backgroundColor,
+    matchBackground,
     seed: config.seed ?? DEFAULT_SEED,
     light: resolveLight(config.light),
     maxPixelRatio: config.maxPixelRatio ?? DEFAULT_MAX_PIXEL_RATIO,

@@ -13,6 +13,7 @@ export const DEFAULT_OVERSCAN = 0.15;
 export const DEFAULT_MAX_INSTANCES = 4000;
 export const DEFAULT_BACKGROUND_COLOR = "#0a0a0f";
 export const DEFAULT_COLORS = "#c9ccd6";
+export const DEFAULT_MATCH_BACKGROUND = false;
 export const DEFAULT_SEED = 1337;
 export const DEFAULT_MAX_PIXEL_RATIO = 2;
 export const DEFAULT_SHADOWS = true;

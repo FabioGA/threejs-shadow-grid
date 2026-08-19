@@ -94,6 +94,9 @@
           <option value="palette">random palette</option>
         </select>
       </label>
+      <label>Match background
+        <input type="checkbox" id="matchBackground" />
+      </label>
     </div>
 
     <main>
@@ -165,6 +168,9 @@
         bg.update({
           colors: e.target.value === "single" ? "#8fb8ff" : ["#8fb8ff", "#c58fff", "#8fffc8"],
         });
+      });
+      document.getElementById("matchBackground").addEventListener("change", (e) => {
+        bg.update({ matchBackground: e.target.checked });
       });
 
       window.__grids = { bg, box };

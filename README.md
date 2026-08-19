@@ -97,8 +97,9 @@ function ShadowGridBackground(props: GridConfig) {
 | `jitter` | `number` (0-1) | `0.4` | Only used when `arrangement` is `"random"`. |
 | `overscan` | `number` (0-1) | `0.15` | Extra rows/columns rendered past the edges, to avoid pop-in. Rarely needs changing. |
 | `maxInstances` | `number` | `4000` | Safety cap on total rendered objects (perf guard for very small cell sizes / huge containers). |
-| `colors` | `string \| string[]` | `"#c9ccd6"` | A single CSS color applies to every object. An array (e.g. `["#ff4d4d", "#4d79ff"]`) makes each object randomly pick one color from the list. |
+| `colors` | `string \| string[]` | `"#c9ccd6"` | A single CSS color applies to every object. An array (e.g. `["#ff4d4d", "#4d79ff"]`) makes each object randomly pick one color from the list. Ignored if `matchBackground` is `true`. |
 | `backgroundColor` | `string \| "transparent"` | `"#0a0a0f"` | `"transparent"` lets the page background show through (objects then only shadow each other slightly, since there's no backdrop to catch shadows). |
+| `matchBackground` | `boolean` | `false` | When `true`, forces object color to exactly match `backgroundColor` (ignoring `colors`), so objects are only revealed by their cast shadows. No effect if `backgroundColor` is `"transparent"`. |
 | `seed` | `number` | fixed internal default | Seeds the "random" choices (arrangement jitter, palette pick, model pick) so results are reproducible instead of using `Math.random()`. |
 | `light` | `LightStyle \| LightConfig` | `"medium"` | See below. |
 | `maxPixelRatio` | `number` | `2` | Caps `devicePixelRatio` for performance on high-DPI screens. |
