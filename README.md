@@ -96,7 +96,7 @@ function ShadowGridBackground(props: GridConfig) {
 | `objectSize` | `number \| { min, max }` (px) | `120` | Each model is centered and scaled so its largest bounding-box dimension equals this. Lets you mix STL files of wildly different native scales. A fixed number gives every object the same size; `{ min, max }` gives each object an independent random size in that range. |
 | `arrangement` | `"grid" \| "random"` | `"grid"` | `"random"` jitters position per cell (amount controlled by `jitter`). |
 | `jitter` | `number` (0-1) | `0.4` | Only used when `arrangement` is `"random"`. |
-| `rotation` | `number \| "random"` (degrees) | `0` | Rotation around the vertical axis. A fixed number applies to every object; `"random"` gives each object an independent random rotation. Independent of `arrangement`. |
+| `rotation` | `number \| "random" \| { x?, y?, z? }` (degrees) | `0` | A bare number/`"random"` rotates only around the vertical (Y) axis. Pass `{ x, y, z }` to control each axis independently - each can itself be a fixed number or `"random"`; omitted axes stay at 0. Independent of `arrangement`. |
 | `overscan` | `number` (0-1) | `0.15` | Extra rows/columns rendered past the edges, to avoid pop-in. Rarely needs changing. |
 | `maxInstances` | `number` | `4000` | Safety cap on total rendered objects (perf guard for very small cell sizes / huge containers). |
 | `colors` | `string \| string[]` | `"#c9ccd6"` | A single CSS color applies to every object. An array (e.g. `["#ff4d4d", "#4d79ff"]`) makes each object randomly pick one color from the list. Ignored if `matchBackground` is `true`. |

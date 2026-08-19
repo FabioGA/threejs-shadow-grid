@@ -3,13 +3,18 @@ import { OBJECT_MATERIAL_METALNESS, OBJECT_MATERIAL_ROUGHNESS, PIXELS_PER_UNIT }
 import { pickColor } from "./colors";
 import { createRng } from "./random";
 import { maxObjectSize } from "./resolveConfig";
-import type { ResolvedGridConfig } from "./types";
+import type { AxisRotation, ResolvedGridConfig } from "./types";
 
 const _matrix = new THREE.Matrix4();
 const _position = new THREE.Vector3();
 const _quaternion = new THREE.Quaternion();
 const _scale = new THREE.Vector3(1, 1, 1);
 const _euler = new THREE.Euler();
+
+/** Resolves one axis of a rotation config to radians, drawing from `rng` when set to "random". */
+function axisRotationRadians(axis: AxisRotation, rng: () => number): number {
+  return axis === "random" ? rng() * Math.PI * 2 : (axis * Math.PI) / 180;
+}
 
 /**
  * Builds and maintains the InstancedMesh grid: given a set of loaded
@@ -73,6 +78,7 @@ export class GridBuilder {
       x: number;
       y: number;
       z: number;
+      rotX: number;
       rotY: number;
       rotZ: number;
       scale: number;
@@ -96,9 +102,9 @@ export class GridBuilder {
         const jitterX = (rng() - 0.5) * jitter * cellSizeUnits;
         const jitterY = (rng() - 0.5) * jitter * cellSizeUnits;
         const jitterZ = (rng() - 0.5) * jitter * cellSizeUnits * 0.6;
-        const rotY =
-          config.rotation === "random" ? rng() * Math.PI * 2 : (config.rotation * Math.PI) / 180;
-        const rotZ = config.arrangement === "random" ? (rng() - 0.5) * jitter * 0.6 : 0;
+        const rotX = axisRotationRadians(config.rotation.x, rng);
+        const rotY = axisRotationRadians(config.rotation.y, rng);
+        const rotZ = axisRotationRadians(config.rotation.z, rng);
         const scale =
           typeof config.objectSize === "number"
             ? 1
@@ -109,6 +115,7 @@ export class GridBuilder {
           x: originX + col * cellSizeUnits + jitterX,
           y: originY + row * cellSizeUnits + jitterY,
           z: jitterZ,
+          rotX,
           rotY,
           rotZ,
           scale,
@@ -135,7 +142,7 @@ export class GridBuilder {
       const idx = writeIndex[plan.modelIndex]++;
 
       _position.set(plan.x, plan.y, plan.z);
-      _euler.set(0, plan.rotY, plan.rotZ);
+      _euler.set(plan.rotX, plan.rotY, plan.rotZ);
       _quaternion.setFromEuler(_euler);
       _scale.setScalar(plan.scale);
       _matrix.compose(_position, _quaternion, _scale);

@@ -14,11 +14,27 @@ export type ModelSource = string | ArrayBuffer;
 export type Arrangement = "grid" | "random";
 
 /**
- * Per-object rotation around the vertical (Y) axis, in degrees.
- * - A number -> every object gets that exact rotation.
- * - `"random"` -> each object gets an independent random rotation (0-360°).
+ * Rotation around a single axis, in degrees.
+ * - A number -> every object gets that exact rotation on this axis.
+ * - `"random"` -> each object gets an independent random rotation (0-360°) on this axis.
  */
-export type RotationConfig = number | "random";
+export type AxisRotation = number | "random";
+
+/**
+ * Per-object rotation, in degrees.
+ * - A bare `AxisRotation` (number or `"random"`) applies to the vertical
+ *   (Y, "spin") axis only - x and z stay at 0. This is the common case and
+ *   matches the pre-3-axis-support shorthand.
+ * - `{ x?, y?, z? }` sets each axis independently; omitted axes default to 0.
+ */
+export type RotationConfig = AxisRotation | { x?: AxisRotation; y?: AxisRotation; z?: AxisRotation };
+
+/** `RotationConfig` after resolving the shorthand form - always has all three axes. */
+export interface ResolvedRotationConfig {
+  x: AxisRotation;
+  y: AxisRotation;
+  z: AxisRotation;
+}
 
 /**
  * Target on-screen object size, in CSS pixels (largest bounding-box
@@ -107,9 +123,10 @@ export interface GridConfig {
   /** 0-1 amount of position jitter applied when arrangement is "random". Default: 0.4. */
   jitter?: number;
   /**
-   * Object rotation around the vertical axis, in degrees: a fixed number
-   * applies to every object, or `"random"` gives each object an
-   * independent random rotation. Independent of `arrangement`. Default: 0.
+   * Object rotation, in degrees. A bare number or `"random"` rotates only
+   * around the vertical (Y) axis; pass `{ x, y, z }` to control each axis
+   * independently (each can itself be a fixed number or `"random"`).
+   * Independent of `arrangement`. Default: 0 (no rotation on any axis).
    */
   rotation?: RotationConfig;
   /**
@@ -147,9 +164,10 @@ export interface GridConfig {
 
 /** Fully-resolved internal config (all optional fields filled in, unions narrowed). */
 export interface ResolvedGridConfig
-  extends Required<Omit<GridConfig, "light" | "colors" | "container" | "models">> {
+  extends Required<Omit<GridConfig, "light" | "colors" | "container" | "models" | "rotation">> {
   light: Required<LightConfig>;
   colors: ColorConfig;
   container: HTMLElement;
   models: ModelSource[];
+  rotation: ResolvedRotationConfig;
 }

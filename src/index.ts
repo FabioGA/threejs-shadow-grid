@@ -6,6 +6,7 @@ export type {
   ColorConfig,
   Arrangement,
   RotationConfig,
+  AxisRotation,
   SizeConfig,
   ModelSource,
 } from "./types";

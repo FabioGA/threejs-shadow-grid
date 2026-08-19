@@ -159,6 +159,19 @@
       }
       .field select { flex: 1.4 1 0; }
 
+      .axis-group {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 4px 8px 6px;
+        margin: 7px 0;
+      }
+      .axis-group-label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.55;
+        margin: 3px 0 2px;
+      }
       .subgroup { display: none; padding-left: 2px; border-left: 2px solid rgba(255, 255, 255, 0.1); margin-left: 2px; }
       .subgroup.active { display: block; }
       .palette-row { display: flex; align-items: center; gap: 6px; }
@@ -259,18 +272,49 @@
                 <input type="range" id="jitter" min="0" max="1" step="0.05" value="0.4" />
                 <span class="val" id="jitter-val">0.40</span>
               </div>
-              <div class="field">
-                <label for="rotationMode">rotation</label>
-                <select id="rotationMode">
-                  <option value="fixed" selected>fixed</option>
-                  <option value="random">random</option>
-                </select>
-              </div>
-              <div class="subgroup active" id="rotation-fixed-group">
+              <div class="axis-group">
+                <div class="axis-group-label">rotation (x / y / z)</div>
                 <div class="field">
-                  <label for="rotationDeg">degrees</label>
-                  <input type="range" id="rotationDeg" min="0" max="360" step="5" value="0" />
-                  <span class="val" id="rotationDeg-val">0°</span>
+                  <label for="rotationXMode">x</label>
+                  <select id="rotationXMode">
+                    <option value="fixed" selected>fixed</option>
+                    <option value="random">random</option>
+                  </select>
+                </div>
+                <div class="subgroup active" id="rotationX-fixed-group">
+                  <div class="field">
+                    <label for="rotationXDeg">degrees</label>
+                    <input type="range" id="rotationXDeg" min="0" max="360" step="5" value="0" />
+                    <span class="val" id="rotationXDeg-val">0°</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="rotationYMode">y</label>
+                  <select id="rotationYMode">
+                    <option value="fixed" selected>fixed</option>
+                    <option value="random">random</option>
+                  </select>
+                </div>
+                <div class="subgroup active" id="rotationY-fixed-group">
+                  <div class="field">
+                    <label for="rotationYDeg">degrees</label>
+                    <input type="range" id="rotationYDeg" min="0" max="360" step="5" value="0" />
+                    <span class="val" id="rotationYDeg-val">0°</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="rotationZMode">z</label>
+                  <select id="rotationZMode">
+                    <option value="fixed" selected>fixed</option>
+                    <option value="random">random</option>
+                  </select>
+                </div>
+                <div class="subgroup active" id="rotationZ-fixed-group">
+                  <div class="field">
+                    <label for="rotationZDeg">degrees</label>
+                    <input type="range" id="rotationZDeg" min="0" max="360" step="5" value="0" />
+                    <span class="val" id="rotationZDeg-val">0°</span>
+                  </div>
                 </div>
               </div>
               <div class="field">
@@ -447,8 +491,12 @@
         objectSizeMax: 140,
         arrangement: "grid",
         jitter: 0.4,
-        rotationMode: "fixed",
-        rotationDeg: 0,
+        rotationXMode: "fixed",
+        rotationXDeg: 0,
+        rotationYMode: "fixed",
+        rotationYDeg: 0,
+        rotationZMode: "fixed",
+        rotationZDeg: 0,
         overscan: 0.15,
         maxInstances: 4000,
         colorsMode: "single",
@@ -469,6 +517,10 @@
       };
       const state = { ...defaultState, colorPalette: [...defaultState.colorPalette] };
 
+      function axisRotationValue(mode, deg) {
+        return mode === "random" ? "random" : deg;
+      }
+
       /** Turns playground state into a real GridConfig patch (no container/models - those stay fixed on the live instance). */
       function buildConfig(s) {
         return {
@@ -476,7 +528,11 @@
           objectSize: s.objectSizeMode === "range" ? { min: s.objectSizeMin, max: s.objectSizeMax } : s.objectSize,
           arrangement: s.arrangement,
           jitter: s.jitter,
-          rotation: s.rotationMode === "random" ? "random" : s.rotationDeg,
+          rotation: {
+            x: axisRotationValue(s.rotationXMode, s.rotationXDeg),
+            y: axisRotationValue(s.rotationYMode, s.rotationYDeg),
+            z: axisRotationValue(s.rotationZMode, s.rotationZDeg),
+          },
           overscan: s.overscan,
           maxInstances: s.maxInstances,
           colors: s.colorsMode === "palette" ? [...s.colorPalette] : s.colorSingle,
@@ -500,7 +556,8 @@
       function generateCode(s) {
         const objectSize =
           s.objectSizeMode === "range" ? `{ min: ${s.objectSizeMin}, max: ${s.objectSizeMax} }` : `${s.objectSize}`;
-        const rotation = s.rotationMode === "random" ? '"random"' : `${s.rotationDeg}`;
+        const axisCode = (mode, deg) => (mode === "random" ? '"random"' : `${deg}`);
+        const rotation = `{ x: ${axisCode(s.rotationXMode, s.rotationXDeg)}, y: ${axisCode(s.rotationYMode, s.rotationYDeg)}, z: ${axisCode(s.rotationZMode, s.rotationZDeg)} }`;
         const colors =
           s.colorsMode === "palette" ? `[${s.colorPalette.map((c) => `"${c}"`).join(", ")}]` : `"${s.colorSingle}"`;
         const backgroundColor = s.backgroundTransparent ? '"transparent"' : `"${s.backgroundColor}"`;
@@ -619,10 +676,12 @@ const grid = new ShadowGrid({
       bindRange("objectSizeMax", "objectSizeMax", (v) => `${v}px`);
       bindSelect("arrangement", "arrangement");
       bindRange("jitter", "jitter", (v) => v.toFixed(2));
-      bindSelect("rotationMode", "rotationMode", (v) =>
-        document.getElementById("rotation-fixed-group").classList.toggle("active", v === "fixed")
-      );
-      bindRange("rotationDeg", "rotationDeg", (v) => `${v}°`);
+      ["X", "Y", "Z"].forEach((axis) => {
+        bindSelect(`rotation${axis}Mode`, `rotation${axis}Mode`, (v) =>
+          document.getElementById(`rotation${axis}-fixed-group`).classList.toggle("active", v === "fixed")
+        );
+        bindRange(`rotation${axis}Deg`, `rotation${axis}Deg`, (v) => `${v}°`);
+      });
       bindRange("overscan", "overscan", (v) => v.toFixed(2));
       bindNumber("maxInstances", "maxInstances");
       bindNumber("seed", "seed");
@@ -673,9 +732,11 @@ const grid = new ShadowGrid({
           document.getElementById(id).value = state.colorPalette[i];
         });
         toggleSubgroup(state.objectSizeMode, "fixed", "objectSize-fixed-group", "objectSize-range-group");
-        document
-          .getElementById("rotation-fixed-group")
-          .classList.toggle("active", state.rotationMode === "fixed");
+        ["X", "Y", "Z"].forEach((axis) => {
+          document
+            .getElementById(`rotation${axis}-fixed-group`)
+            .classList.toggle("active", state[`rotation${axis}Mode`] === "fixed");
+        });
         toggleSubgroup(state.colorsMode, "single", "colors-single-group", "colors-palette-group");
         document.querySelectorAll("#playground-panel .val").forEach((span) => {
           const id = span.id.replace(/-val$/, "");

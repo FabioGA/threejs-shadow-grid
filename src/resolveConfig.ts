@@ -1,4 +1,12 @@
-import type { GridConfig, LightConfig, ModelSource, ResolvedGridConfig, SizeConfig } from "./types";
+import type {
+  GridConfig,
+  LightConfig,
+  ModelSource,
+  ResolvedGridConfig,
+  ResolvedRotationConfig,
+  RotationConfig,
+  SizeConfig,
+} from "./types";
 import {
   DEFAULT_ARRANGEMENT,
   DEFAULT_BACKGROUND_COLOR,
@@ -31,6 +39,15 @@ function resolveLight(light: GridConfig["light"]): Required<LightConfig> {
   return { ...DEFAULT_LIGHT, ...light };
 }
 
+/** Resolves the rotation shorthand (bare axis value = Y-axis only) into an explicit x/y/z object. */
+function resolveRotation(rotation: RotationConfig | undefined): ResolvedRotationConfig {
+  const value = rotation ?? DEFAULT_ROTATION;
+  if (typeof value === "number" || value === "random") {
+    return { x: 0, y: value, z: 0 };
+  }
+  return { x: value.x ?? 0, y: value.y ?? 0, z: value.z ?? 0 };
+}
+
 function toModelArray(models: ModelSource | ModelSource[]): ModelSource[] {
   return Array.isArray(models) ? models : [models];
 }
@@ -59,7 +76,7 @@ export function resolveConfig(config: GridConfig): ResolvedGridConfig {
     objectSize: config.objectSize ?? DEFAULT_OBJECT_SIZE,
     arrangement: config.arrangement ?? DEFAULT_ARRANGEMENT,
     jitter: config.jitter ?? DEFAULT_JITTER,
-    rotation: config.rotation ?? DEFAULT_ROTATION,
+    rotation: resolveRotation(config.rotation),
     overscan: config.overscan ?? DEFAULT_OVERSCAN,
     maxInstances: config.maxInstances ?? DEFAULT_MAX_INSTANCES,
     colors: matchBackground && backgroundColor !== "transparent" ? backgroundColor : config.colors ?? DEFAULT_COLORS,
