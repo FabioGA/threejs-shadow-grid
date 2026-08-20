@@ -16,6 +16,7 @@ function buildConfig(overrides: Partial<ResolvedGridConfig> = {}): ResolvedGridC
     rotation: { x: 0, y: 0, z: 0 },
     overscan: 0,
     maxInstances: 4000,
+    modelWeights: null,
     colors: "#ffffff",
     hardness: 0,
     backgroundColor: "#000000",
@@ -62,6 +63,34 @@ describe("GridBuilder", () => {
 
     const mesh = scene.children[0] as THREE.InstancedMesh;
     expect(mesh.count).toBe(5);
+  });
+
+  it("picks from all models roughly evenly when modelWeights is null (unweighted)", () => {
+    const scene = new THREE.Scene();
+    const builder = new GridBuilder(scene);
+    builder.setGeometries([new THREE.BoxGeometry(1, 1, 1), new THREE.BoxGeometry(1, 1, 1)]);
+
+    builder.rebuild(20, 20, buildConfig({ modelWeights: null }));
+
+    const meshes = scene.children.filter((c): c is THREE.InstancedMesh => c instanceof THREE.InstancedMesh);
+    expect(meshes.length).toBe(2);
+    expect(meshes[0].count + meshes[1].count).toBe(400);
+    expect(meshes[0].count).toBeGreaterThan(0);
+    expect(meshes[1].count).toBeGreaterThan(0);
+  });
+
+  it("partitions instances across models proportionally to modelWeights", () => {
+    const scene = new THREE.Scene();
+    const builder = new GridBuilder(scene);
+    builder.setGeometries([new THREE.BoxGeometry(1, 1, 1), new THREE.BoxGeometry(1, 1, 1)]);
+
+    // 20x20 viewport -> 400 total instances, split ~75/25 by weight.
+    builder.rebuild(20, 20, buildConfig({ modelWeights: [3, 1] }));
+
+    const meshes = scene.children.filter((c): c is THREE.InstancedMesh => c instanceof THREE.InstancedMesh);
+    expect(meshes[0].count + meshes[1].count).toBe(400);
+    expect(meshes[0].count).toBeCloseTo(300, -1);
+    expect(meshes[1].count).toBeCloseTo(100, -1);
   });
 
   it("shifts alternating rows by rowOffset, as a fraction of cellSize", () => {

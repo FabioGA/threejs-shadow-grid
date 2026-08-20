@@ -11,6 +11,7 @@ import {
   PIXELS_PER_UNIT,
 } from "./defaults";
 import { createColorPicker } from "./colors";
+import { createModelIndexPicker } from "./models";
 import { createRng } from "./random";
 import { maxObjectSize } from "./resolveConfig";
 import type { AxisRotation, ResolvedGridConfig } from "./types";
@@ -112,6 +113,10 @@ export class GridBuilder {
     // Built once per rebuild (not per cell) so a weighted palette can
     // pre-partition the exact `total` instance count across colors.
     const colorPicker = createColorPicker(config.colors, total, rng);
+    // Same idea for models.modelWeights: pre-partition the exact `total`
+    // count across models when weighted, instead of an independent
+    // per-cell dice roll.
+    const modelPicker = createModelIndexPicker(this.geometries.length, config.modelWeights, total, rng);
 
     // Pass 1: decide per-cell model index + color + transform jitter, and
     // tally how many instances each model needs.
@@ -140,7 +145,7 @@ export class GridBuilder {
         if (cellIndex >= total) break outer;
         cellIndex++;
 
-        const modelIndex = Math.floor(rng() * this.geometries.length) % this.geometries.length;
+        const modelIndex = modelPicker();
         const jitter = config.arrangement === "random" ? config.jitter : 0;
 
         const jitterX = (rng() - 0.5) * jitter * cellSizeUnits;

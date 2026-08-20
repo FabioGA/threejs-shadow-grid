@@ -6,6 +6,7 @@ import type {
   ResolvedRotationConfig,
   RotationConfig,
   SizeConfig,
+  WeightedModel,
 } from "./types";
 import {
   DEFAULT_ARRANGEMENT,
@@ -64,8 +65,19 @@ function resolveRotation(rotation: RotationConfig | undefined): ResolvedRotation
   return { x: value.x ?? 0, y: value.y ?? 0, z: value.z ?? 0 };
 }
 
-function toModelArray(models: ModelSource | ModelSource[]): ModelSource[] {
-  return Array.isArray(models) ? models : [models];
+/** A weighted model list is an array of `{ model, weight }` objects - distinct from an array of bare sources (strings, or ArrayBuffer instances, which are also typeof "object"). */
+function isWeightedModelList(models: ModelSource[] | WeightedModel[]): models is WeightedModel[] {
+  const first = models[0];
+  return typeof first === "object" && !(first instanceof ArrayBuffer);
+}
+
+/** Splits `GridConfig.models` into the flat source list to load and, when given as weighted entries, the parallel per-model weights. */
+function resolveModels(models: GridConfig["models"]): { models: ModelSource[]; modelWeights: number[] | null } {
+  const list = Array.isArray(models) ? models : [models];
+  if (isWeightedModelList(list)) {
+    return { models: list.map((entry) => entry.model), modelWeights: list.map((entry) => entry.weight) };
+  }
+  return { models: list, modelWeights: null };
 }
 
 /**
@@ -84,9 +96,11 @@ export function resolveConfig(config: GridConfig): ResolvedGridConfig {
 
   const backgroundColor = config.backgroundColor ?? DEFAULT_BACKGROUND_COLOR;
   const matchBackground = config.matchBackground ?? DEFAULT_MATCH_BACKGROUND;
+  const { models, modelWeights } = resolveModels(config.models);
 
   const resolved: ResolvedGridConfig = {
-    models: toModelArray(config.models),
+    models,
+    modelWeights,
     container: resolveContainer(config.container),
     cellSize: config.cellSize ?? DEFAULT_CELL_SIZE,
     objectSize: config.objectSize ?? DEFAULT_OBJECT_SIZE,

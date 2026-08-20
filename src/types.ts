@@ -10,6 +10,21 @@
 /** One or more URLs (or already-fetched ArrayBuffers) pointing at .stl files. */
 export type ModelSource = string | ArrayBuffer;
 
+/** One entry in a weighted model list - see `GridConfig.models`. */
+export interface WeightedModel {
+  /** STL model URL, or an already-fetched ArrayBuffer. */
+  model: ModelSource;
+  /**
+   * Relative weight controlling what share of grid cells render this
+   * model. Weights don't need to add up to any particular total - e.g. a
+   * weight of 2 next to a weight of 1 just means twice as many objects use
+   * that model. Same semantics as `WeightedColor`'s weight: each render's
+   * exact instance count is partitioned across models proportionally to
+   * weight (then shuffled), so the split is exact even for small grids.
+   */
+  weight: number;
+}
+
 /** How objects are placed within the auto-filled grid. */
 export type Arrangement = "grid" | "random";
 
@@ -175,10 +190,14 @@ export type ColorConfig = string | string[] | WeightedColor[];
 
 export interface GridConfig {
   /**
-   * One or more STL model URLs. If more than one is provided, each grid
-   * cell randomly picks one of them (weighted equally).
+   * One or more STL model URLs. If more than one is provided as a plain
+   * array, each grid cell randomly picks one of them with equal
+   * probability. Pass `{ model, weight }` entries instead to control the
+   * exact share of the grid each model should fill - e.g. weights of
+   * 70/30 reliably give ~70%/30% of objects that model, the same way
+   * weighted `colors` work.
    */
-  models: ModelSource | ModelSource[];
+  models: ModelSource | ModelSource[] | WeightedModel[];
 
   /** DOM element (or CSS selector) the scene mounts into and fills completely. */
   container: HTMLElement | string;
@@ -271,5 +290,7 @@ export interface ResolvedGridConfig extends Required<
   colors: ColorConfig;
   container: HTMLElement;
   models: ModelSource[];
+  /** Per-model weight, parallel to `models` - `null` when `models` wasn't given as weighted entries (equal-probability picking). */
+  modelWeights: number[] | null;
   rotation: ResolvedRotationConfig;
 }

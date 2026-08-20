@@ -54,6 +54,39 @@ describe("resolveConfig", () => {
     expect(() => resolveConfig({ models: "/a.stl", container: "#does-not-exist" })).toThrow(/did not match/);
   });
 
+  describe("model resolution", () => {
+    it("leaves modelWeights null for a single model source", () => {
+      const resolved = resolveConfig({ models: "/a.stl", container: makeContainer() });
+      expect(resolved.models).toEqual(["/a.stl"]);
+      expect(resolved.modelWeights).toBeNull();
+    });
+
+    it("leaves modelWeights null for a plain array of model sources", () => {
+      const resolved = resolveConfig({ models: ["/a.stl", "/b.stl"], container: makeContainer() });
+      expect(resolved.models).toEqual(["/a.stl", "/b.stl"]);
+      expect(resolved.modelWeights).toBeNull();
+    });
+
+    it("treats an ArrayBuffer source as a plain (unweighted) model, not a weighted entry", () => {
+      const buffer = new ArrayBuffer(8);
+      const resolved = resolveConfig({ models: [buffer], container: makeContainer() });
+      expect(resolved.models).toEqual([buffer]);
+      expect(resolved.modelWeights).toBeNull();
+    });
+
+    it("resolves a weighted model list into parallel models/modelWeights arrays", () => {
+      const resolved = resolveConfig({
+        models: [
+          { model: "/a.stl", weight: 70 },
+          { model: "/b.stl", weight: 30 },
+        ],
+        container: makeContainer(),
+      });
+      expect(resolved.models).toEqual(["/a.stl", "/b.stl"]);
+      expect(resolved.modelWeights).toEqual([70, 30]);
+    });
+  });
+
   describe("light resolution", () => {
     it("resolves a bare style string to that style's preset defaults", () => {
       const resolved = resolveConfig({ models: "/a.stl", container: makeContainer(), light: "hard" });

@@ -112,7 +112,7 @@ function ShadowGridBackground(props: GridConfig) {
 | Option | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `container` | `HTMLElement \| string` | required | Element, or CSS selector, to fill completely. |
-| `models` | `string \| string[]` | required | STL URL(s). Multiple models are randomly distributed across cells. |
+| `models` | `string \| string[] \| { model, weight }[]` | required | STL URL(s). A plain array is randomly distributed across cells with equal odds. An array of `{ model, weight }` instead partitions the *exact* current instance count proportionally to weight, the same way weighted `colors` do - see "Weighted models" below. |
 | `cellSize` | `number` (px) | `220` | Distance between neighboring object centers. Columns/rows are always auto-computed from this + the container size - this is what makes the grid "infinite" (it always fills the space). |
 | `objectSize` | `number \| { min, max }` (px) | `120` | Each model is centered and scaled so its largest bounding-box dimension equals this. Lets you mix STL files of wildly different native scales. A fixed number gives every object the same size; `{ min, max }` gives each object an independent random size in that range. |
 | `arrangement` | `"grid" \| "random"` | `"grid"` | `"random"` jitters position per cell (amount controlled by `jitter`). |
@@ -141,6 +141,18 @@ colors: [
 ```
 
 Weights are relative, not required to sum to 100 - `{ weight: 2 }` next to `{ weight: 1 }` just means twice as many objects get that color. Each rebuild (initial render, resize, or `update()`) partitions that render's *exact* instance count across colors proportionally to weight, then shuffles the assignment across cells - so, unlike a plain `string[]` palette (where each object independently rolls the dice and the split is only approximately even over a large enough count), a weighted palette's split is exact for every render, including small grids.
+
+### Weighted models
+
+```ts
+models: [
+  { model: "/models/apple.stl", weight: 60 },
+  { model: "/models/banana.stl", weight: 25 },
+  { model: "/models/pineapple.stl", weight: 15 },
+]
+```
+
+Same idea as weighted `colors`, applied to which STL each cell renders: weights are relative (not required to sum to 100), and each rebuild partitions the *exact* instance count across models proportionally to weight, then shuffles - so a plain array (`models: ["/a.stl", "/b.stl"]`) still picks per cell at random with equal odds, but a weighted list gives an exact split every time instead of an approximate one.
 
 ### Light
 
