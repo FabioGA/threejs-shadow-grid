@@ -2,7 +2,13 @@
 import * as THREE from "three";
 import { afterEach, describe, expect, it } from "vitest";
 import { LightRig } from "../light";
-import { DEFAULT_LIGHT, LIGHT_STYLE_PRESETS, MAX_SHADOW_RADIUS, MIN_SHADOW_RADIUS } from "../defaults";
+import {
+  DEFAULT_LIGHT,
+  LIGHT_STYLE_PRESETS,
+  MAX_CURSOR_ANGLE,
+  MAX_SHADOW_RADIUS,
+  MIN_SHADOW_RADIUS,
+} from "../defaults";
 import type { LightConfig } from "../types";
 
 function buildContainer(): HTMLElement {
@@ -29,8 +35,8 @@ describe("LightRig", () => {
     rigs = [];
   });
 
-  function makeRig(config: Required<LightConfig>) {
-    const rig = new LightRig(buildContainer(), config);
+  function makeRig(config: Required<LightConfig>, scene: THREE.Scene = new THREE.Scene()) {
+    const rig = new LightRig(scene, buildContainer(), config);
     rigs.push(rig);
     return rig;
   }
@@ -104,7 +110,7 @@ describe("LightRig", () => {
   });
 
   it("dispose() removes its window/document listeners", () => {
-    const rig = new LightRig(buildContainer(), buildLightConfig({ mode: "auto", easing: 100 }));
+    const rig = new LightRig(new THREE.Scene(), buildContainer(), buildLightConfig({ mode: "auto", easing: 100 }));
     rig.dispose();
 
     move(100, 0); // should be a no-op now
@@ -115,5 +121,103 @@ describe("LightRig", () => {
 
     // Still behaving like a pure sweep (position keeps drifting) since the pointermove had no effect.
     expect(first.distanceTo(second)).toBeGreaterThan(0);
+  });
+
+  it("dispose() removes the light, its target, and the ambient light from the scene", () => {
+    const scene = new THREE.Scene();
+    const rig = makeRig(buildLightConfig(), scene);
+    const key = rig.key;
+    expect(scene.children).toContain(key);
+    rig.dispose();
+    expect(scene.children).not.toContain(key);
+    expect(scene.children).not.toContain(key.target);
+    expect(scene.children).not.toContain(rig.ambient);
+  });
+
+  describe("type: 'sun' (default)", () => {
+    it("adds a DirectionalLight to the scene", () => {
+      const scene = new THREE.Scene();
+      const rig = makeRig(buildLightConfig(), scene);
+      expect(rig.key).toBeInstanceOf(THREE.DirectionalLight);
+      expect(scene.children).toContain(rig.key);
+    });
+  });
+
+  describe("type: 'cursor'", () => {
+    it("adds a SpotLight to the scene", () => {
+      const scene = new THREE.Scene();
+      const rig = makeRig(buildLightConfig({ type: "cursor" }), scene);
+      expect(rig.key).toBeInstanceOf(THREE.SpotLight);
+      expect(scene.children).toContain(rig.key);
+    });
+
+    it("sets a sensible cone angle for ordinary bounds", () => {
+      const rig = makeRig(buildLightConfig({ type: "cursor", cursorHeight: 700 }));
+      rig.setShadowBounds(5, 3);
+      const spot = rig.key as THREE.SpotLight;
+      expect(spot.angle).toBeGreaterThan(0);
+      expect(spot.angle).toBeLessThanOrEqual(MAX_CURSOR_ANGLE);
+    });
+
+    it("floors the effective height (clamping the cone angle) for a huge grid with a tiny cursorHeight", () => {
+      const rig = makeRig(buildLightConfig({ type: "cursor", cursorHeight: 1 }));
+      rig.setShadowBounds(500, 500);
+      const spot = rig.key as THREE.SpotLight;
+      expect(spot.angle).toBeCloseTo(MAX_CURSOR_ANGLE, 5);
+    });
+
+    it("follows the exact (unscaled) pointer position, ignoring intensity", () => {
+      const rig = makeRig(buildLightConfig({ mode: "auto", easing: 100, type: "cursor", intensity: 0.2 }));
+      rig.setShadowBounds(5, 3);
+      move(100, 0); // top-right corner of the 100x100 container -> nx=1, ny=-1
+
+      rig.update(1);
+      const spot = rig.key as THREE.SpotLight;
+      expect(spot.position.x).toBeCloseTo(5, 5);
+      expect(spot.position.y).toBeCloseTo(3, 5);
+    });
+
+    it("points the target straight down at the point beneath the light", () => {
+      const rig = makeRig(buildLightConfig({ mode: "auto", easing: 100, type: "cursor" }));
+      rig.setShadowBounds(5, 3);
+      move(100, 0);
+      rig.update(1);
+      const spot = rig.key as THREE.SpotLight;
+      expect(spot.target.position.x).toBeCloseTo(spot.position.x, 5);
+      expect(spot.target.position.y).toBeCloseTo(spot.position.y, 5);
+      expect(spot.target.position.z).toBe(0);
+    });
+
+    it("auto-sweeps continuously, roaming within the visible grid extent", () => {
+      const rig = makeRig(buildLightConfig({ mode: "auto", type: "cursor" }));
+      rig.setShadowBounds(5, 3);
+      rig.update(0.5);
+      const first = rig.key.position.clone();
+      rig.update(0.5);
+      const second = rig.key.position.clone();
+      expect(first.distanceTo(second)).toBeGreaterThan(0);
+    });
+  });
+
+  describe("runtime type switching (updateConfig)", () => {
+    it("swaps the underlying light in the scene from sun to cursor", () => {
+      const scene = new THREE.Scene();
+      const rig = makeRig(buildLightConfig({ type: "sun" }), scene);
+      const sunLight = rig.key;
+      rig.updateConfig(buildLightConfig({ type: "cursor" }));
+      expect(scene.children).not.toContain(sunLight);
+      expect(rig.key).toBeInstanceOf(THREE.SpotLight);
+      expect(scene.children).toContain(rig.key);
+    });
+
+    it("swaps the underlying light in the scene from cursor to sun", () => {
+      const scene = new THREE.Scene();
+      const rig = makeRig(buildLightConfig({ type: "cursor" }), scene);
+      const cursorLight = rig.key;
+      rig.updateConfig(buildLightConfig({ type: "sun" }));
+      expect(scene.children).not.toContain(cursorLight);
+      expect(rig.key).toBeInstanceOf(THREE.DirectionalLight);
+      expect(scene.children).toContain(rig.key);
+    });
   });
 });

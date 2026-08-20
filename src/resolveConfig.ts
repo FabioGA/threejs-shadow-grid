@@ -25,8 +25,11 @@ import {
   DEFAULT_SEED,
   DEFAULT_SHADOWS,
   LIGHT_STYLE_PRESETS,
+  MAX_CURSOR_HEIGHT,
   MAX_SHADOW_MAP_SIZE,
+  MIN_CURSOR_HEIGHT,
   MIN_SHADOW_MAP_SIZE,
+  PIXELS_PER_UNIT,
 } from "./defaults";
 
 function resolveContainer(container: HTMLElement | string): HTMLElement {
@@ -46,7 +49,10 @@ function resolveLight(light: GridConfig["light"]): Required<LightConfig> {
   const hardness = partial.hardness ?? LIGHT_STYLE_PRESETS[style].defaultHardness;
   const rawShadowMapSize = partial.shadowMapSize ?? LIGHT_STYLE_PRESETS[style].shadowMapSize;
   const shadowMapSize = Math.round(Math.min(MAX_SHADOW_MAP_SIZE, Math.max(MIN_SHADOW_MAP_SIZE, rawShadowMapSize)));
-  return { ...DEFAULT_LIGHT, ...partial, style, hardness, shadowMapSize };
+  // cursorHeight's real default is style-dependent (mirrors the sun's distance) unless the caller sets it explicitly.
+  const rawCursorHeight = partial.cursorHeight ?? LIGHT_STYLE_PRESETS[style].distance * PIXELS_PER_UNIT;
+  const cursorHeight = Math.min(MAX_CURSOR_HEIGHT, Math.max(MIN_CURSOR_HEIGHT, rawCursorHeight));
+  return { ...DEFAULT_LIGHT, ...partial, style, hardness, shadowMapSize, cursorHeight };
 }
 
 /** Resolves the rotation shorthand (bare axis value = Y-axis only) into an explicit x/y/z object. */

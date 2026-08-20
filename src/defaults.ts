@@ -48,6 +48,15 @@ export const LIGHT_STYLE_PRESETS: Record<
   LightStyle,
   {
     intensity: number;
+    /**
+     * SpotLight.intensity for `type: "cursor"`. Distinct from `intensity`
+     * above in principle (SpotLight.intensity is photometric/candela in
+     * three.js's physically-correct lighting, with a 1/distance^2 falloff
+     * by default) - but decay is fixed at 0 for the cursor light (see
+     * light.ts) specifically to cancel that falloff out, which makes it
+     * behave at the same order of magnitude as DirectionalLight.intensity.
+     */
+    cursorIntensity: number;
     distance: number;
     lightSize: number; // approximates a soft-shadow area light via PCFSoft + radius
     shadowMapSize: number;
@@ -58,6 +67,7 @@ export const LIGHT_STYLE_PRESETS: Record<
 > = {
   soft: {
     intensity: 1.4,
+    cursorIntensity: 1.8,
     distance: 9,
     lightSize: 3.2,
     shadowMapSize: 1024,
@@ -66,6 +76,7 @@ export const LIGHT_STYLE_PRESETS: Record<
   },
   medium: {
     intensity: 1.9,
+    cursorIntensity: 2.5,
     distance: 7,
     lightSize: 1.6,
     shadowMapSize: 1536,
@@ -74,6 +85,7 @@ export const LIGHT_STYLE_PRESETS: Record<
   },
   hard: {
     intensity: 2.6,
+    cursorIntensity: 3.4,
     distance: 5.5,
     lightSize: 0.4,
     shadowMapSize: 2048,
@@ -90,6 +102,22 @@ export const MAX_SHADOW_RADIUS = 6.5;
 export const MIN_SHADOW_MAP_SIZE = 256;
 export const MAX_SHADOW_MAP_SIZE = 4096;
 
+/** Clamp range for `LightConfig.cursorHeight`, in CSS pixels. */
+export const MIN_CURSOR_HEIGHT = 40;
+export const MAX_CURSOR_HEIGHT = 4000;
+
+/**
+ * Widest half-angle (radians) the "cursor" light's spotlight cone is
+ * allowed to open to - safely under Three.js's hard cap of PI/2 so the
+ * cone never degenerates into extreme perspective shadow-map distortion
+ * at its edge. If the grid is wider than `cursorHeight` can cover at this
+ * angle, the effective height is floored instead of exceeding it.
+ */
+export const MAX_CURSOR_ANGLE = 1.15;
+
+/** How far the "cursor" light's auto-sweep roams, as a fraction of the visible grid half-extent. */
+export const CURSOR_SWEEP_FRACTION = 0.8;
+
 export const DEFAULT_LIGHT: Required<LightConfig> = {
   style: "medium",
   intensity: 1,
@@ -105,4 +133,8 @@ export const DEFAULT_LIGHT: Required<LightConfig> = {
   // resolveLight() always recomputes this unless the caller sets shadowMapSize explicitly.
   shadowMapSize: 1536,
   mode: "auto",
+  type: "sun",
+  // Actual default is style-dependent (see LIGHT_STYLE_PRESETS.distance);
+  // resolveLight() always recomputes this unless the caller sets cursorHeight explicitly.
+  cursorHeight: 700,
 };

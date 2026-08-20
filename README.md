@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/threejs-shadow-grid.svg)](https://www.npmjs.com/package/threejs-shadow-grid)
 [![license: MIT](https://img.shields.io/npm/l/threejs-shadow-grid.svg)](./LICENSE)
 
-A configurable, infinitely-tiling grid of 3D objects for site backgrounds, built on [Three.js](https://threejs.org). Drop in one or more STL models; the library tiles them to completely fill whatever container you give it, and lights them with a single shadow-casting "sun" that follows the mouse (or sweeps automatically on touch devices), so the shadows shift as people move their cursor around the page.
+A configurable, infinitely-tiling grid of 3D objects for site backgrounds, built on [Three.js](https://threejs.org). Drop in one or more STL models; the library tiles them to completely fill whatever container you give it, and lights them with a single shadow-casting light that follows the mouse (or sweeps automatically on touch devices), so the shadows shift as people move their cursor around the page. Choose between a "sun" (parallel, uniform shadows) or a "cursor" light that hovers right over the pointer, casting shadows that genuinely vary per object based on distance.
 
 It's framework-agnostic - a plain TypeScript class with no React/Vue/etc dependency - so it drops into any site.
 
@@ -11,7 +11,8 @@ It's framework-agnostic - a plain TypeScript class with no React/Vue/etc depende
 
 - Fills its container completely and re-fills automatically on resize (auto-computed columns/rows based on a cell-size you set, not a fixed count).
 - Works as a full-page fixed background or as a smaller contained box; either way the grid stays full-bleed while page/container content scrolls over it.
-- Mouse-driven shadow: a single directional light follows the pointer. On touch devices (or before the first pointer move) it drifts naturally between randomized waypoints (speed configurable) instead of sitting static or looping a fixed path.
+- Mouse-driven shadow: a single light follows the pointer. On touch devices (or before the first pointer move) it drifts naturally between randomized waypoints (speed configurable) instead of sitting static or looping a fixed path.
+- Two light types: a "sun" (parallel rays, every shadow the same length/direction) or a "cursor" light hovering directly over the pointer (shadows genuinely vary per object based on distance to it) - see [Light](#light).
 - Three simplified light presets (`soft` / `medium` / `hard`) so you never have to touch raw Three.js lighting values.
 - Physically-based material from soft matte rubber to hard, glossy, and reflective, dialed with a single `hardness` knob.
 - Grid or randomized (jittered position) arrangement, plus independent rotation and size controls (fixed or randomized), and per-row horizontal offset for brick/masonry/cascade layouts.
@@ -150,6 +151,8 @@ light: "soft" // "soft" | "medium" | "hard"
 
 // or:
 light: {
+  type: "sun",            // "sun" | "cursor" - default "sun"
+  cursorHeight: 700,      // only for type "cursor": height above the grid, in px - lower = more dramatic - default depends on `style`
   style: "hard",       // soft | medium | hard - default "medium"
   intensity: 1,         // 0-1+, how far the shadow swings with the pointer - default 1
   autoSweepOnTouch: true,  // auto-drift when there's no pointer activity - default true
@@ -173,6 +176,8 @@ If shadows look pixelated or blocky - most noticeable on larger containers, or g
 
 The light starts in "auto sweep" mode and switches to following the pointer the moment it detects real pointer movement (mouse, pen, or a touch drag); moving the pointer off the container drops back to sweeping rather than freezing the shadow in its last spot. That also means touch-only visitors - who typically never fire a hover-style pointer move - simply get the sweep the whole time. The sweep is a continuous drift (layered sine waves at incommensurate frequencies, not a "pick a point and stop there" scheme), so it's always in motion - it never pauses at any point along its path and never repeats an obvious fixed loop; `sweepSpeed` scales how fast it drifts. Set `mode: "pointer"` or `mode: "sweep"` to pin one of those two behaviors instead of the automatic hybrid - handy for previewing the touch experience on a desktop.
 
+`type` picks between two different lights, not just two looks: **"sun"** (the default) is a distant light, like real sunlight - every object's shadow points the same way and is roughly the same length, no matter where it sits in the grid. **"cursor"** is a light that hovers directly above wherever the pointer (or the sweep) currently is, like a lamp floating over the scene - because it radiates from a point instead of a fixed angle, nearby objects get short, spread-out shadows while far-away ones get longer, more dramatic ones, so the shadow shape actually changes across the grid. `cursorHeight` (only used by `type: "cursor"`) controls how close that lamp sits to the grid - lower is more dramatic, higher flattens out toward the "sun" look; on a very wide or tall container, an extremely low value may be raised automatically just enough to keep the whole grid lit.
+
 ## Interactive playground
 
 `examples/demo.html` includes a collapsible "Config playground" panel (top-right) exposing every option in the table above as a live control, plus a generated-code panel that always mirrors the current state - tweak values, watch the background update, then copy the exact `ShadowGrid` config to paste into your own project. To run it locally:
@@ -192,7 +197,7 @@ Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thin
 - Each unique model renders as a single `InstancedMesh`, so a grid of hundreds of objects is one draw call per model, not one per object.
 - `maxInstances` caps total objects if a very small `cellSize` on a very large container would otherwise generate an excessive count.
 - `maxPixelRatio` (default 2) keeps very high-DPI displays from rendering more pixels than the effect needs.
-- Shadows use a single directional light with one shadow map (not a shadow-casting light per object), which is what makes this affordable even with a large grid.
+- Shadows use a single shadow-casting light (the "sun" or the "cursor" spotlight) with one shadow map - never a light per object - which is what makes this affordable even with a large grid.
 
 ## Roadmap / current scope
 

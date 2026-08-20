@@ -62,6 +62,9 @@ export interface LightConfig {
   /**
    * How strongly the shadow moves as the pointer moves across the container.
    * 0 = light barely reacts, 1 = light swings fully with the pointer. Default: 1.
+   * For `type: "cursor"`, this only scales how far the automatic sweep
+   * roams - following the pointer always tracks its exact position
+   * regardless of this value.
    */
   intensity?: number;
   /**
@@ -114,6 +117,30 @@ export interface LightConfig {
    * one behavior regardless of input device.
    */
   mode?: "auto" | "pointer" | "sweep";
+  /**
+   * Which kind of shadow-casting light to use:
+   * - "sun" (default) - a distant light, like actual sunlight: every
+   *   object's shadow points the same direction and is roughly the same
+   *   length, no matter where it sits in the grid.
+   * - "cursor" - a light that hovers directly above the exact spot on the
+   *   grid your cursor is over (or wherever the automatic sweep currently
+   *   is), like a lamp floating over the scene. Objects near that spot get
+   *   short, spread-out shadows; objects further away get longer, more
+   *   dramatic ones - the shadow shape actually changes across the grid,
+   *   not just its direction. See `cursorHeight` to control how dramatic.
+   */
+  type?: "sun" | "cursor";
+  /**
+   * Only used when `type` is "cursor": how high above the grid the light
+   * hovers, in CSS pixels. Lower = the light sits closer to the objects,
+   * so nearby shadows stay short while far-away ones stretch out
+   * dramatically (like a lamp just above a tabletop). Higher = shadows
+   * even out and the effect starts to look more like the "sun" light.
+   * Left unset, it defaults to a value matching whichever `style` is
+   * active. On very wide/tall containers, an extremely low value may be
+   * raised automatically just enough to keep the whole grid lit.
+   */
+  cursorHeight?: number;
 }
 
 /** One entry in a weighted color palette - see `ColorConfig`. */

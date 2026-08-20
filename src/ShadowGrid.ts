@@ -69,8 +69,7 @@ export class ShadowGrid {
 
     this.gridBuilder = new GridBuilder(this.scene);
 
-    this.lightRig = new LightRig(this.container, this.config.light);
-    this.scene.add(this.lightRig.key, this.lightRig.key.target, this.lightRig.ambient);
+    this.lightRig = new LightRig(this.scene, this.container, this.config.light);
 
     this.backdrop = new THREE.Mesh(
       new THREE.PlaneGeometry(1, 1),

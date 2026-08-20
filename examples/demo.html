@@ -478,6 +478,20 @@
             <fieldset>
               <legend>Light</legend>
               <div class="field">
+                <label for="lightType">type</label>
+                <select id="lightType">
+                  <option value="sun" selected>sun (directional)</option>
+                  <option value="cursor">cursor (hovering lamp)</option>
+                </select>
+              </div>
+              <div class="subgroup" id="lightType-cursor-group">
+                <div class="field">
+                  <label for="cursorHeight">cursorHeight</label>
+                  <input type="range" id="cursorHeight" min="40" max="2000" step="10" value="700" />
+                  <span class="val" id="cursorHeight-val">700px</span>
+                </div>
+              </div>
+              <div class="field">
                 <label for="lightMode">movement</label>
                 <select id="lightMode">
                   <option value="sweep" selected>automatic movement</option>
@@ -674,6 +688,8 @@
           hardness: randRange(0, 1),
           shadows: true,
           light: {
+            type: randChoice(["sun", "cursor"]),
+            cursorHeight: randInt(80, 1200),
             mode: randChoice(["auto", "pointer", "sweep"]),
             style: randChoice(["soft", "medium", "hard"]),
             intensity: randRange(0.5, 1.6),
@@ -724,6 +740,8 @@
         shadows: true,
         maxPixelRatio: 2,
         seed: 1337,
+        lightType: "sun",
+        cursorHeight: 700,
         lightMode: "sweep",
         lightStyle: "medium",
         lightIntensity: 1,
@@ -769,6 +787,8 @@
           hardness: s.hardness,
           seed: s.seed,
           light: {
+            type: s.lightType,
+            cursorHeight: s.cursorHeight,
             mode: s.lightMode,
             style: s.lightStyle,
             intensity: s.lightIntensity,
@@ -818,6 +838,8 @@ const grid = new ShadowGrid({
   hardness: ${s.hardness},
   seed: ${s.seed},
   light: {
+    type: "${s.lightType}",
+    cursorHeight: ${s.cursorHeight},
     mode: "${s.lightMode}",
     style: "${s.lightStyle}",
     intensity: ${s.lightIntensity},
@@ -967,6 +989,10 @@ const grid = new ShadowGrid({
       bindCheckbox("shadows", "shadows");
       bindRange("maxPixelRatio", "maxPixelRatio", (v) => v.toFixed(1));
 
+      bindSelect("lightType", "lightType", (v) =>
+        document.getElementById("lightType-cursor-group").classList.toggle("active", v === "cursor")
+      );
+      bindRange("cursorHeight", "cursorHeight", (v) => `${v}px`);
       bindSelect("lightMode", "lightMode");
       bindSelect("lightStyle", "lightStyle");
       bindRange("lightIntensity", "lightIntensity", (v) => v.toFixed(1));
@@ -1010,6 +1036,7 @@ const grid = new ShadowGrid({
             .classList.toggle("active", state[`rotation${axis}Mode`] === "fixed");
         });
         toggleSubgroup(state.colorsMode, "single", "colors-single-group", "colors-palette-group");
+        document.getElementById("lightType-cursor-group").classList.toggle("active", state.lightType === "cursor");
         document.querySelectorAll("#playground-panel .val").forEach((span) => {
           const id = span.id.replace(/-val$/, "");
           const input = document.getElementById(id);
@@ -1078,6 +1105,8 @@ const grid = new ShadowGrid({
         if ("seed" in config) state.seed = config.seed;
         if (config.light) {
           const l = config.light;
+          if ("type" in l) state.lightType = l.type;
+          if ("cursorHeight" in l) state.cursorHeight = l.cursorHeight;
           if ("mode" in l) state.lightMode = l.mode;
           if ("style" in l) state.lightStyle = l.style;
           if ("intensity" in l) state.lightIntensity = l.intensity;

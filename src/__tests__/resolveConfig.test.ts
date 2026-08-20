@@ -6,8 +6,11 @@ import {
   DEFAULT_CELL_SIZE,
   DEFAULT_OBJECT_SIZE,
   LIGHT_STYLE_PRESETS,
+  MAX_CURSOR_HEIGHT,
   MAX_SHADOW_MAP_SIZE,
+  MIN_CURSOR_HEIGHT,
   MIN_SHADOW_MAP_SIZE,
+  PIXELS_PER_UNIT,
 } from "../defaults";
 
 function makeContainer(): HTMLElement {
@@ -85,6 +88,56 @@ describe("resolveConfig", () => {
         light: { shadowMapSize: 999999 },
       });
       expect(resolved.light.shadowMapSize).toBe(MAX_SHADOW_MAP_SIZE);
+    });
+
+    it("defaults type to 'sun'", () => {
+      const resolved = resolveConfig({ models: "/a.stl", container: makeContainer() });
+      expect(resolved.light.type).toBe("sun");
+    });
+
+    it("resolves an explicit type", () => {
+      const resolved = resolveConfig({
+        models: "/a.stl",
+        container: makeContainer(),
+        light: { type: "cursor" },
+      });
+      expect(resolved.light.type).toBe("cursor");
+    });
+
+    it("defaults cursorHeight from the style preset's distance", () => {
+      const resolved = resolveConfig({
+        models: "/a.stl",
+        container: makeContainer(),
+        light: { style: "hard" },
+      });
+      expect(resolved.light.cursorHeight).toBe(LIGHT_STYLE_PRESETS.hard.distance * PIXELS_PER_UNIT);
+    });
+
+    it("lets an explicit cursorHeight override the style's default", () => {
+      const resolved = resolveConfig({
+        models: "/a.stl",
+        container: makeContainer(),
+        light: { style: "soft", cursorHeight: 900 },
+      });
+      expect(resolved.light.cursorHeight).toBe(900);
+    });
+
+    it("clamps cursorHeight below the minimum", () => {
+      const resolved = resolveConfig({
+        models: "/a.stl",
+        container: makeContainer(),
+        light: { cursorHeight: 1 },
+      });
+      expect(resolved.light.cursorHeight).toBe(MIN_CURSOR_HEIGHT);
+    });
+
+    it("clamps cursorHeight above the maximum", () => {
+      const resolved = resolveConfig({
+        models: "/a.stl",
+        container: makeContainer(),
+        light: { cursorHeight: 999999 },
+      });
+      expect(resolved.light.cursorHeight).toBe(MAX_CURSOR_HEIGHT);
     });
   });
 
