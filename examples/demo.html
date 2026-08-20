@@ -225,6 +225,22 @@
       .palette-row { display: flex; align-items: center; gap: 6px; }
       .palette-row input[type="color"] { flex: none; }
       .palette-row input.weight { width: 4.2em; }
+      .palette-row .remove-color-btn {
+        flex: none;
+        width: 1.6em;
+        height: 1.6em;
+        line-height: 1;
+        padding: 0;
+        border-radius: 5px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+        color: #eee;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+      .palette-row .remove-color-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.18); }
+      .palette-row .remove-color-btn:disabled { opacity: 0.35; cursor: default; }
+      .add-color-btn { margin-top: 6px; }
 
       .code-panel { display: flex; flex-direction: column; min-height: 260px; }
       .code-header {
@@ -431,21 +447,8 @@
                 </div>
               </div>
               <div class="subgroup" id="colors-palette-group">
-                <div class="field palette-row">
-                  <label>color / weight</label>
-                  <input type="color" id="colorPalette0" value="#8fb8ff" />
-                  <input type="number" class="weight" id="colorWeight0" min="0" step="1" value="50" />
-                </div>
-                <div class="field palette-row">
-                  <label></label>
-                  <input type="color" id="colorPalette1" value="#c58fff" />
-                  <input type="number" class="weight" id="colorWeight1" min="0" step="1" value="30" />
-                </div>
-                <div class="field palette-row">
-                  <label></label>
-                  <input type="color" id="colorPalette2" value="#8fffc8" />
-                  <input type="number" class="weight" id="colorWeight2" min="0" step="1" value="20" />
-                </div>
+                <div id="colorPaletteRows"></div>
+                <button type="button" class="reset-btn add-color-btn" id="add-color-btn">+ Add color</button>
               </div>
               <div class="field">
                 <label for="backgroundColor">backgroundColor</label>
@@ -940,6 +943,61 @@ const grid = new ShadowGrid({
         document.getElementById(inactiveId).classList.toggle("active", mode !== activeValue);
       }
 
+      /** Rebuilds the weighted-color-palette rows from `state.colorPalette`/`colorWeights` - any length, not just a fixed count. */
+      function renderColorPaletteRows() {
+        const container = document.getElementById("colorPaletteRows");
+        container.innerHTML = "";
+
+        state.colorPalette.forEach((color, i) => {
+          const row = document.createElement("div");
+          row.className = "field palette-row";
+
+          const label = document.createElement("label");
+          label.textContent = i === 0 ? "color / weight" : "";
+          row.appendChild(label);
+
+          const colorInput = document.createElement("input");
+          colorInput.type = "color";
+          colorInput.value = color;
+          colorInput.addEventListener("input", (e) => {
+            state.colorPalette[i] = e.target.value;
+            scheduleApply();
+          });
+          row.appendChild(colorInput);
+
+          const weightInput = document.createElement("input");
+          weightInput.type = "number";
+          weightInput.className = "weight";
+          weightInput.min = "0";
+          weightInput.step = "1";
+          weightInput.value = state.colorWeights[i];
+          weightInput.addEventListener("input", (e) => {
+            const value = Number(e.target.value);
+            if (Number.isNaN(value)) return;
+            state.colorWeights[i] = value;
+            scheduleApply();
+          });
+          row.appendChild(weightInput);
+
+          const removeBtn = document.createElement("button");
+          removeBtn.type = "button";
+          removeBtn.className = "remove-color-btn";
+          removeBtn.textContent = "×";
+          removeBtn.title = "Remove color";
+          removeBtn.disabled = state.colorPalette.length <= 1;
+          removeBtn.addEventListener("click", () => {
+            if (state.colorPalette.length <= 1) return;
+            state.colorPalette.splice(i, 1);
+            state.colorWeights.splice(i, 1);
+            renderColorPaletteRows();
+            scheduleApply();
+          });
+          row.appendChild(removeBtn);
+
+          container.appendChild(row);
+        });
+      }
+
       document.getElementById("playground-toggle").addEventListener("click", () => {
         document.getElementById("playground-panel").classList.toggle("open");
       });
@@ -968,19 +1026,12 @@ const grid = new ShadowGrid({
         toggleSubgroup(v, "single", "colors-single-group", "colors-palette-group")
       );
       bindColor("colorSingle", "colorSingle");
-      ["colorPalette0", "colorPalette1", "colorPalette2"].forEach((id, i) => {
-        document.getElementById(id).addEventListener("input", (e) => {
-          state.colorPalette[i] = e.target.value;
-          scheduleApply();
-        });
-      });
-      ["colorWeight0", "colorWeight1", "colorWeight2"].forEach((id, i) => {
-        document.getElementById(id).addEventListener("input", (e) => {
-          const value = Number(e.target.value);
-          if (Number.isNaN(value)) return;
-          state.colorWeights[i] = value;
-          scheduleApply();
-        });
+      renderColorPaletteRows();
+      document.getElementById("add-color-btn").addEventListener("click", () => {
+        state.colorPalette.push(randColor());
+        state.colorWeights.push(10);
+        renderColorPaletteRows();
+        scheduleApply();
       });
       bindColor("backgroundColor", "backgroundColor");
       bindCheckbox("backgroundTransparent", "backgroundTransparent");
@@ -1023,12 +1074,7 @@ const grid = new ShadowGrid({
           if (el.type === "checkbox") el.checked = state[key];
           else el.value = state[key];
         });
-        ["colorPalette0", "colorPalette1", "colorPalette2"].forEach((id, i) => {
-          document.getElementById(id).value = state.colorPalette[i];
-        });
-        ["colorWeight0", "colorWeight1", "colorWeight2"].forEach((id, i) => {
-          document.getElementById(id).value = state.colorWeights[i];
-        });
+        renderColorPaletteRows();
         toggleSubgroup(state.objectSizeMode, "fixed", "objectSize-fixed-group", "objectSize-range-group");
         ["X", "Y", "Z"].forEach((axis) => {
           document
@@ -1089,10 +1135,12 @@ const grid = new ShadowGrid({
             state.colorSingle = config.colors;
           } else if (Array.isArray(config.colors)) {
             state.colorsMode = "palette";
-            config.colors.slice(0, 3).forEach((entry, i) => {
+            state.colorPalette = [];
+            state.colorWeights = [];
+            config.colors.forEach((entry) => {
               const isWeighted = entry && typeof entry === "object";
-              state.colorPalette[i] = isWeighted ? entry.color : entry;
-              state.colorWeights[i] = isWeighted ? entry.weight : 1;
+              state.colorPalette.push(isWeighted ? entry.color : entry);
+              state.colorWeights.push(isWeighted ? entry.weight : 1);
             });
           }
         }
