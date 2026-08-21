@@ -1,24 +1,29 @@
 # threejs-shadow-grid
 
 [![npm version](https://img.shields.io/npm/v/threejs-shadow-grid.svg)](https://www.npmjs.com/package/threejs-shadow-grid)
+[![CI](https://github.com/FabioGA/threejs-shadow-grid/actions/workflows/ci.yml/badge.svg)](https://github.com/FabioGA/threejs-shadow-grid/actions/workflows/ci.yml)
+[![types included](https://img.shields.io/badge/types-included-3178c6.svg)](https://www.typescriptlang.org)
 [![license: MIT](https://img.shields.io/npm/l/threejs-shadow-grid.svg)](./LICENSE)
 
-A configurable, infinitely-tiling grid of 3D objects for site backgrounds, built on [Three.js](https://threejs.org). Drop in one or more STL models; the library tiles them to completely fill whatever container you give it, and lights them with a single shadow-casting light that follows the mouse (or sweeps automatically on touch devices), so the shadows shift as people move their cursor around the page. Choose between a "sun" (parallel, uniform shadows) or a "cursor" light that hovers right over the pointer, casting shadows that genuinely vary per object based on distance.
+<p align="center">
+  <img src="assets/hero.gif" width="960" alt="threejs-shadow-grid: a tiling grid of 3D objects whose shadows shift as the cursor moves across the page" />
+</p>
+
+<p align="center">
+  <strong>A configurable, infinitely-tiling grid of 3D objects for site backgrounds — framework-agnostic, built on <a href="https://threejs.org">Three.js</a>, with a shadow that follows the mouse.</strong>
+</p>
+
+<p align="center">
+  <a href="https://fabioga.github.io/threejs-shadow-grid/examples/demo.html">
+    <img src="https://img.shields.io/badge/Try_the_live_demo-8fb8ff?style=for-the-badge&logoColor=white" alt="Try the live demo" />
+  </a>
+</p>
+
+Drop in one or more STL models; the library tiles them to completely fill whatever container you give it, and lights them with a single shadow-casting light that follows the mouse (or sweeps automatically on touch devices), so the shadows shift as people move their cursor around the page. Choose between a "sun" (parallel, uniform shadows) or a "cursor" light that hovers right over the pointer, casting shadows that genuinely vary per object based on distance.
 
 It's framework-agnostic - a plain TypeScript class with no React/Vue/etc dependency - so it drops into any site.
 
-## Features
-
-- Fills its container completely and re-fills automatically on resize (auto-computed columns/rows based on a cell-size you set, not a fixed count).
-- Works as a full-page fixed background or as a smaller contained box; either way the grid stays full-bleed while page/container content scrolls over it.
-- Mouse-driven shadow: a single light follows the pointer. On touch devices (or before the first pointer move) it drifts naturally between randomized waypoints (speed configurable) instead of sitting static or looping a fixed path.
-- Two light types: a "sun" (parallel rays, every shadow the same length/direction) or a "cursor" light hovering directly over the pointer (shadows genuinely vary per object based on distance to it) - see [Light](#light).
-- Three simplified light presets (`soft` / `medium` / `hard`) so you never have to touch raw Three.js lighting values.
-- Physically-based material from soft matte rubber to hard, glossy, and reflective, dialed with a single `hardness` knob.
-- Grid or randomized (jittered position) arrangement, plus independent rotation and size controls (fixed or randomized), and per-row horizontal offset for brick/masonry/cascade layouts.
-- Single color, or a palette that's randomly assigned per object.
-- Loads one or more STL files; each grid cell randomly picks one when you pass several.
-- Ships as ESM + CJS + full TypeScript types.
+The live demo above includes a full config playground (every option below as a live control, with a generated-code panel) - no install needed to try it. To run it from source instead: `npm run build && npx http-server . -p 8080`, then open `examples/demo.html`.
 
 ## Install
 
@@ -28,9 +33,7 @@ npm install threejs-shadow-grid three
 
 `three` is a peer dependency (`>=0.150.0`) - install it alongside so your bundler dedupes a single copy.
 
-## Quick start
-
-### Recipe A: full-page fixed background
+## Quick example
 
 ```html
 <div id="bg" style="position: fixed; inset: 0; z-index: -1;"></div>
@@ -55,7 +58,43 @@ grid.destroy();
 
 The wrapper div is given `position: fixed; inset: 0` in your own CSS - that's what makes it a pinned, full-viewport background that stays in place while the rest of the page scrolls over it (`z-index: -1` keeps it behind your content). The library itself only cares about filling *that* element; how you position the element on the page is ordinary CSS, which keeps the library unopinionated about your layout.
 
-### Recipe B: a contained box (e.g. a hero panel, a card)
+### Using with React
+
+There's no React wrapper package (by design - the library is deliberately framework-agnostic), but wrapping it is a few lines:
+
+```tsx
+function ShadowGridBackground(props: GridConfig) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const grid = new ShadowGrid({ ...props, container: ref.current });
+    return () => grid.destroy();
+  }, []);
+  return <div ref={ref} style={{ position: "absolute", inset: 0 }} />;
+}
+```
+
+## Features
+
+- **Full-bleed, auto-filling grid** - fills its container completely and re-fills automatically on resize (auto-computed columns/rows based on a cell size you set, not a fixed count). [See it live →](https://fabioga.github.io/threejs-shadow-grid/examples/demo.html#hero-section)
+- **Full-page background or a contained box** - the same class either pins behind the whole page or fills a smaller panel/card; either way the grid stays full-bleed while page/container content scrolls over it. [Contained-box example →](https://fabioga.github.io/threejs-shadow-grid/examples/demo.html#box-section)
+- **Mouse-driven shadow** - a single light follows the pointer. On touch devices (or before the first pointer move) it drifts naturally between randomized waypoints instead of sitting static or looping a fixed path.
+- **Two light types** - a "sun" (parallel rays, every shadow the same length/direction) or a "cursor" light hovering directly over the pointer (shadows genuinely vary per object based on distance to it) - see [Light](#light).
+- **Three simplified light presets** (`soft` / `medium` / `hard`) plus a continuous `hardness` knob, so you never have to touch raw Three.js lighting values.
+- **Physically-based material** from soft matte rubber to hard, glossy, and reflective, dialed with a single `hardness` knob.
+- **Grid or randomized arrangement**, independent per-axis rotation and size controls (fixed or randomized), and per-row horizontal offset for brick/masonry/cascade layouts.
+- **Weighted color palettes and weighted STL model mixing** - exact proportional splits (e.g. 70/30), not just a per-object dice roll.
+- **Ships as ESM + CJS + full TypeScript types.**
+
+## Gallery
+
+The same `ShadowGrid` class, three different looks - all from the live demo linked above.
+
+### Full-page background
+
+The effect shown in the hero at the top of this page: a fixed full-viewport background with the config from the [Quick example](#quick-example) above. [Live →](https://fabioga.github.io/threejs-shadow-grid/examples/demo.html#hero-section)
+
+### Contained box (e.g. a hero panel, a card)
 
 ```html
 <div id="hero-visual" style="position: relative; width: 100%; height: 480px; overflow: hidden;"></div>
@@ -72,9 +111,9 @@ new ShadowGrid({
 });
 ```
 
-Same class, same API - it just fills whatever box you give it. If that box scrolls internally (`overflow: auto`) the grid stays put behind the scrolling content, the same way the full-page recipe does.
+Same class, same API - it just fills whatever box you give it. If that box scrolls internally (`overflow: auto`) the grid stays put behind the scrolling content, the same way the full-page recipe does. [Live →](https://fabioga.github.io/threejs-shadow-grid/examples/demo.html#box-section)
 
-### Recipe C: matching an exact background color
+### Matching an exact background color
 
 `backgroundColor` normally paints a backdrop plane that's *lit* by the scene's own light, so its rendered shade shifts as the shadow moves and won't sit at an exact hex value. To match a precise color (e.g. copied from another site's CSS), set the color as a normal CSS `background-color` on the container and pass `backgroundColor: "transparent"` instead - the grid then only draws a shadow-only backdrop that darkens your CSS background where shadowed, leaving the rest exactly as you set it:
 
@@ -91,23 +130,20 @@ new ShadowGrid({
 });
 ```
 
-### React
+## API
 
-There's no React wrapper package (by design - see "Why framework-agnostic" below), but wrapping it is a few lines:
+### `new ShadowGrid(config)`
 
-```tsx
-function ShadowGridBackground(props: GridConfig) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!ref.current) return;
-    const grid = new ShadowGrid({ ...props, container: ref.current });
-    return () => grid.destroy();
-  }, []);
-  return <div ref={ref} style={{ position: "absolute", inset: 0 }} />;
-}
-```
+Mounts into `config.container`, fills it completely (via `ResizeObserver`), and starts rendering immediately. See [GridConfig](#gridconfig) below for every option.
 
-## Config reference
+### Instance methods
+
+| Method | Description |
+| --- | --- |
+| `update(patch: Partial<GridConfig>): void` | Merges `patch` into the current config and re-renders. Reloads STL models only if `models` or `objectSize` changed; otherwise just resizes/rebuilds in place - cheap enough to call from a live control panel (see the playground in the live demo). |
+| `destroy(): void` | Stops the render loop, disconnects the `ResizeObserver`, disposes all GPU/DOM resources, and removes the canvas. Safe to call once, e.g. on route change or component unmount. |
+
+### `GridConfig`
 
 | Option | Type | Default | Notes |
 | --- | --- | --- | --- |
@@ -126,7 +162,7 @@ function ShadowGridBackground(props: GridConfig) {
 | `backgroundColor` | `string \| "transparent"` | `"#0a0a0f"` | `"transparent"` lets the page's own background show through. A shadow-only backdrop still catches the moving shadow (darkening the page background where shadowed), so shadows stay visible and the unshadowed color is exactly whatever the page's CSS background is - useful when you need the background to match a specific color exactly, since a solid `backgroundColor` is lit (and so shaded/shadowed) by the scene's own light rather than rendered flat. |
 | `matchBackground` | `boolean` | `false` | When `true`, forces object color to exactly match `backgroundColor` (ignoring `colors`), so objects are only revealed by their cast shadows. No effect if `backgroundColor` is `"transparent"`. |
 | `seed` | `number` | fixed internal default | Seeds the "random" choices (arrangement jitter, palette pick, model pick) so results are reproducible instead of using `Math.random()`. |
-| `light` | `LightStyle \| LightConfig` | `"medium"` | See below. |
+| `light` | `LightStyle \| LightConfig` | `"medium"` | See [Light](#light) below. |
 | `maxPixelRatio` | `number` | `2` | Caps `devicePixelRatio` for performance on high-DPI screens. |
 | `shadows` | `boolean` | `true` | Turn off to skip shadow-map rendering entirely (cheaper, flatter look). |
 
@@ -190,28 +226,18 @@ The light starts in "auto sweep" mode and switches to following the pointer the 
 
 `type` picks between two different lights, not just two looks: **"sun"** (the default) is a distant light, like real sunlight - every object's shadow points the same way and is roughly the same length, no matter where it sits in the grid. **"cursor"** is a light that hovers directly above wherever the pointer (or the sweep) currently is, like a lamp floating over the scene - because it radiates from a point instead of a fixed angle, nearby objects get short, spread-out shadows while far-away ones get longer, more dramatic ones, so the shadow shape actually changes across the grid. `cursorHeight` (only used by `type: "cursor"`) controls how close that lamp sits to the grid - lower is more dramatic, higher flattens out toward the "sun" look; on a very wide or tall container, an extremely low value may be raised automatically just enough to keep the whole grid lit.
 
-## Interactive playground
-
-`examples/demo.html` includes a collapsible "Config playground" panel (bottom-right) exposing every option in the table above as a live control, plus a generated-code panel that always mirrors the current state - tweak values, watch the background update, then copy the exact `ShadowGrid` config to paste into your own project. To run it locally:
-
-```bash
-npm run build   # or npm run dev, in a separate terminal, to rebuild on change
-npx http-server . -p 8080   # any static file server serving the repo root works
-# open http://localhost:8080/examples/demo.html
-```
-
-## Getting STL models
+### Getting STL models
 
 Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thingiverse.com), [Printables](https://www.printables.com), or exporting a simple shape from Blender/Figma-to-3D tools. Keep files small (a few hundred KB) since they load in the browser - decimate/simplify highly detailed prints before using them as a tiled background element.
 
-## Performance notes
+### Performance notes
 
 - Each unique model renders as a single `InstancedMesh`, so a grid of hundreds of objects is one draw call per model, not one per object.
 - `maxInstances` caps total objects if a very small `cellSize` on a very large container would otherwise generate an excessive count.
 - `maxPixelRatio` (default 2) keeps very high-DPI displays from rendering more pixels than the effect needs.
 - Shadows use a single shadow-casting light (the "sun" or the "cursor" spotlight) with one shadow map - never a light per object - which is what makes this affordable even with a large grid.
 
-## Roadmap / current scope
+### Roadmap / current scope
 
 v1 ships with STL support only (via `STLLoader`) and auto-fill grid sizing (cell-size driven, not a fixed row/column count) - these were deliberate scope choices to ship a well-tested core first. The internal loader/grid modules are structured so glTF/OBJ support and a fixed-count grid mode can be added without a breaking change to the public API.
 
@@ -227,7 +253,7 @@ npm run format        # prettier --write
 npm test               # vitest run
 ```
 
-To try the interactive demo locally, see "Interactive playground" above. Contributions are welcome - please run `npm run typecheck`, `npm run lint`, and `npm test` before opening a PR. See [CHANGELOG.md](./CHANGELOG.md) for release history.
+To try the interactive demo locally instead of the [hosted version](https://fabioga.github.io/threejs-shadow-grid/examples/demo.html), run `npm run build`, serve the repo root with any static file server (e.g. `npx http-server . -p 8080`), and open `examples/demo.html`. Contributions are welcome - please run `npm run typecheck`, `npm run lint`, and `npm test` before opening a PR. See [CHANGELOG.md](./CHANGELOG.md) for release history.
 
 ## License
 
