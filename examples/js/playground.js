@@ -12,11 +12,18 @@ import {
   renderColorPaletteRows,
   toggleSubgroup,
 } from "./dom-bindings.js";
+import { models } from "./models.js";
+import { randomGridConfig } from "./random.js";
+import "./feature-toggle.js";
 import { bg, codeOutput, configJson, scheduleApply, syncConfigJson } from "./render.js";
+import "./section-nav.js";
 import { defaultState, state } from "./state.js";
 
 document.getElementById("playground-toggle").addEventListener("click", () => {
   document.getElementById("playground-panel").classList.toggle("open");
+});
+document.getElementById("open-playground-btn").addEventListener("click", () => {
+  document.getElementById("playground-panel").classList.add("open");
 });
 
 bindRange("cellSize", "cellSize", (v) => `${v}px`);
@@ -111,6 +118,12 @@ function syncControlsFromState() {
     if (input) input.dispatchEvent(new Event("input"));
   });
 }
+
+document.getElementById("randomize-bg-btn").addEventListener("click", () => {
+  applyConfigToState(randomGridConfig(models), state);
+  syncControlsFromState();
+  scheduleApply();
+});
 
 document.getElementById("reset-btn").addEventListener("click", () => {
   Object.assign(state, defaultState, {

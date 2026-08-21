@@ -192,7 +192,7 @@ The light starts in "auto sweep" mode and switches to following the pointer the 
 
 ## Interactive playground
 
-`examples/demo.html` includes a collapsible "Config playground" panel (top-right) exposing every option in the table above as a live control, plus a generated-code panel that always mirrors the current state - tweak values, watch the background update, then copy the exact `ShadowGrid` config to paste into your own project. To run it locally:
+`examples/demo.html` includes a collapsible "Config playground" panel (bottom-right) exposing every option in the table above as a live control, plus a generated-code panel that always mirrors the current state - tweak values, watch the background update, then copy the exact `ShadowGrid` config to paste into your own project. To run it locally:
 
 ```bash
 npm run build   # or npm run dev, in a separate terminal, to rebuild on change

@@ -9,9 +9,18 @@
   <body>
     <div id="bg"></div>
 
-    <div id="playground-panel" class="open">
+    <nav id="section-nav" aria-label="Demo sections">
+      <a href="#hero-section" class="section-nav-dot" data-section="hero-section">
+        <span class="section-nav-label">Full-page background</span>
+      </a>
+      <a href="#box-section" class="section-nav-dot" data-section="box-section">
+        <span class="section-nav-label">Contained box</span>
+      </a>
+    </nav>
+
+    <div id="playground-panel">
       <button type="button" id="playground-toggle" class="panel-summary">
-        <span>⚙ Config playground <span class="hint">— controls the background behind this page</span></span>
+        <span>⚙ Config playground</span>
         <span class="chev">▾</span>
       </button>
       <div class="panel-body">
@@ -289,33 +298,63 @@
       </div>
     </div>
 
-    <main>
-      <h1>threejs-shadow-grid</h1>
-      <p>
-        This full-page background is a grid of three basic STL models (a
-        pineapple, an apple, and a banana), tiled to fill the viewport. Move
-        your mouse around - the shadows should shift to follow it. Scroll
-        down to confirm the background stays fixed and full-bleed while
-        this content scrolls over it.
-      </p>
-      <p>
-        Open the "Config playground" panel (top-right) to try every option
-        live and copy the exact config it generates into your own code.
-      </p>
-    </main>
-    <div class="spacer"></div>
-    <main>
-      <p>Still full-bleed down here. Below is the "contained box" recipe - the grid fills just that box and stays put while the page around it scrolls (it's a separate, static example - the playground panel above only controls the full-page background).</p>
-    </main>
+    <section id="hero-section" class="section">
+      <main class="hero-band">
+        <h1>threejs-shadow-grid</h1>
+        <p>
+          A configurable, infinitely-tiling grid of 3D objects for site
+          backgrounds - this whole page's background is it, running live.
+          Move your mouse around and watch the shadows follow.
+        </p>
+        <ul class="feature-chips" id="feature-chips">
+          <li>Weighted STL model mix</li>
+          <li>Weighted color palettes</li>
+          <li>Grid or randomized layout</li>
+          <li>Sun or cursor-follow light</li>
+          <li>Full-page or contained box</li>
+          <li class="feature-chip-extra is-hidden">Independent size &amp; rotation</li>
+          <li class="feature-chip-extra is-hidden">Soft → hard shadow presets</li>
+          <li class="feature-chip-extra is-hidden">Live config code export</li>
+          <li class="feature-chip-extra is-hidden">Row offset for brick/masonry layouts</li>
+          <li class="feature-chip-extra is-hidden">Auto-fills any container size</li>
+          <li class="feature-chip-extra is-hidden">Framework-agnostic, no React/Vue needed</li>
+        </ul>
+        <button type="button" id="features-toggle" class="features-toggle">+ 6 more</button>
+        <div class="hero-actions">
+          <button type="button" id="randomize-bg-btn" class="randomize-btn">🎲 Randomize</button>
+          <button type="button" id="open-playground-btn" class="reset-btn">⚙ Open config playground</button>
+        </div>
+      </main>
 
-    <div id="box-demo">
-      <div class="toolbar">
-        <div class="label" id="box-label">contained box, arrangement: random</div>
-        <button class="randomize-btn" id="randomize-box-btn" type="button">🎲 Randomize</button>
+      <a href="#box-section" class="scroll-cue">
+        <span>There's a second, contained-box recipe below</span>
+        <span class="scroll-cue-arrow" aria-hidden="true">↓</span>
+      </a>
+    </section>
+
+    <!-- Deliberately empty: no UI on top here, so the full-page background
+         is visible with nothing interfering while it scrolls by. -->
+    <div class="spacer"></div>
+
+    <section id="box-section" class="section">
+      <main class="section-intro">
+        <p>
+          This is the same grid, as a "contained box" recipe instead: it
+          fills just this box and stays fixed in place while the page
+          scrolls around it, independent of the full-page background and
+          its playground above.
+        </p>
+      </main>
+
+      <div id="box-demo">
+        <div class="toolbar">
+          <div class="label" id="box-label">contained box, arrangement: random</div>
+          <button class="randomize-btn" id="randomize-box-btn" type="button">🎲 Randomize</button>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="spacer"></div>
+    <div class="spacer spacer-end"></div>
 
     <script type="importmap">
       {

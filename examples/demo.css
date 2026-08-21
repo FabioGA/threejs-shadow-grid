@@ -1,9 +1,17 @@
+html {
+  scroll-behavior: smooth;
+}
 html,
 body {
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #eee;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 /* --- Recipe A: full-page fixed background (also the playground target) --- */
@@ -30,8 +38,214 @@ p {
   line-height: 1.6;
   opacity: 0.9;
 }
+
+/*
+  Both demo recipes live in a full-viewport-tall .section, so each one gets
+  a moment fully in view before the next scrolls in - rather than the two
+  being separated by one large, UI-free gap with nothing marking what's
+  ahead. #section-nav + .scroll-cue below are the "there's more" affordance
+  that gap used to rely on implicitly.
+*/
+.section {
+  position: relative;
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+#hero-section {
+  justify-content: space-between;
+}
+
+/*
+  A full-width translucent band rather than a boxed card - spans the
+  section edge-to-edge so it never has to compete with the sticky config
+  button (bottom-right, see #playground-panel) for a corner. Deliberately
+  short (padding-driven height, not full-viewport) so most of the section -
+  and all of the dedicated .spacer right after it - stays clear for looking
+  at the live background with nothing drawn on top of it.
+*/
+.hero-band {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4vh 8vw;
+  background: rgba(10, 10, 15, 0.55);
+  backdrop-filter: blur(6px);
+  border-radius: 0 0 24px 24px;
+}
+.hero-band p {
+  margin-bottom: 0;
+}
+/* Full-width band, but text itself stays at a readable line length. */
+.hero-band h1,
+.hero-band > p {
+  max-width: 720px;
+}
+
+.feature-chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 14px 0 0;
+  padding: 0;
+}
+.feature-chips li {
+  font-size: 0.74rem;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  opacity: 0.9;
+  white-space: nowrap;
+}
+.feature-chip-extra.is-hidden {
+  display: none;
+}
+.features-toggle {
+  margin-top: 7px;
+  font-size: 0.74rem;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: none;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  color: inherit;
+  opacity: 0.75;
+  cursor: pointer;
+}
+.features-toggle:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.hero-actions button {
+  font-size: 0.85rem;
+  padding: 8px 16px;
+}
+
+.scroll-cue {
+  align-self: center;
+  margin-bottom: 5vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.78rem;
+  opacity: 0.75;
+  transition: opacity 0.15s ease;
+}
+.scroll-cue:hover {
+  opacity: 1;
+}
+.scroll-cue-arrow {
+  font-size: 1.2rem;
+  animation: scroll-cue-bounce 1.6s ease-in-out infinite;
+}
+@keyframes scroll-cue-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue-arrow {
+    animation: none;
+  }
+}
+
+.section-intro {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 6vh 8vw 0;
+  text-align: center;
+}
+
+/*
+  Deliberately empty and UI-free: this is where the full-page background
+  is meant to be seen with nothing drawn on top of it while it scrolls by.
+*/
 .spacer {
-  height: 140vh;
+  height: 60vh;
+}
+.spacer-end {
+  height: 20vh;
+}
+
+/* --- Fixed section nav: a minimal "there are two demos, jump between
+   them" affordance so scrolling past the first never feels like reaching
+   the end of the page. --- */
+#section-nav {
+  position: fixed;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.section-nav-dot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+.section-nav-dot::before {
+  content: "";
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+.section-nav-dot.active::before {
+  background: #eee;
+  transform: scale(1.15);
+}
+.section-nav-label {
+  font-size: 0.74rem;
+  white-space: nowrap;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(10, 10, 15, 0.75);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.section-nav-dot:hover .section-nav-label,
+.section-nav-dot:focus-visible .section-nav-label,
+.section-nav-dot.active .section-nav-label {
+  opacity: 0.9;
+  transform: translateX(0);
+}
+@media (max-width: 700px) {
+  /* Too little spare width for a left-edge nav without risking overlap
+     with the contained box's own top-left toolbar - the scroll cue and
+     ordinary scrolling still carry the "there's more below" job here. */
+  #section-nav {
+    display: none;
+  }
 }
 
 /* --- Recipe B: contained box --- */
@@ -39,7 +253,7 @@ p {
   position: relative;
   width: min(90vw, 900px);
   height: 420px;
-  margin: 6vh auto;
+  margin: 4vh auto 0;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
@@ -50,10 +264,8 @@ p {
   left: 16px;
   z-index: 2;
   display: flex;
-  /* Stacked, not side-by-side: the config playground panel is a tall
-     fixed sidebar pinned to the viewport's top-right, which can cover
-     box-demo's right portion regardless of box-demo's own width - a
-     narrow left-aligned column keeps both controls clear of it. */
+  /* Stacked, not side-by-side: keeps both controls in a narrow column
+     that never has to compete with box-demo's own width for space. */
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
@@ -65,7 +277,7 @@ p {
   font-size: 0.85rem;
   white-space: nowrap;
 }
-#box-demo .randomize-btn {
+.randomize-btn {
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: #eee;
@@ -75,7 +287,7 @@ p {
   cursor: pointer;
   white-space: nowrap;
 }
-#box-demo .randomize-btn:hover {
+.randomize-btn:hover {
   background: rgba(0, 0, 0, 0.6);
 }
 
@@ -108,7 +320,7 @@ button {
 */
 #playground-panel {
   position: fixed;
-  top: 16px;
+  bottom: 16px;
   right: 16px;
   z-index: 20;
   width: min(94vw, 760px);
@@ -137,11 +349,6 @@ button {
   color: inherit;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex: 0 0 auto;
-}
-#playground-panel .panel-summary .hint {
-  font-weight: 400;
-  opacity: 0.6;
-  font-size: 0.78rem;
 }
 #playground-panel .panel-summary .chev {
   transition: transform 0.15s ease;
