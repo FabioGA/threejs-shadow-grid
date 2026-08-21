@@ -2,12 +2,13 @@
 // -> re-render everything" hub every control binding funnels through.
 import { ShadowGrid } from "threejs-shadow-grid";
 import { buildConfig, generateCode } from "./config-transform.js";
-import { models } from "./models.js";
 import { state } from "./state.js";
 
+// buildConfig(state) always includes a weighted `models` entry (see
+// config-transform.js), so the initial models list doesn't need to be
+// passed separately here.
 export const bg = new ShadowGrid({
   container: "#bg",
-  models,
   ...buildConfig(state),
 });
 

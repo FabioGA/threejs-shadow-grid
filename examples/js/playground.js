@@ -35,6 +35,14 @@ bindRange("rowOffset", "rowOffset", (v) => v.toFixed(2));
   );
   bindRange(`rotation${axis}Deg`, `rotation${axis}Deg`, (v) => `${v}°`);
 });
+["modelWeight0", "modelWeight1", "modelWeight2"].forEach((id, i) => {
+  document.getElementById(id).addEventListener("input", (e) => {
+    const value = Number(e.target.value);
+    if (Number.isNaN(value)) return;
+    state.modelWeights[i] = value;
+    scheduleApply();
+  });
+});
 bindRange("overscan", "overscan", (v) => v.toFixed(2));
 bindNumber("maxInstances", "maxInstances");
 bindNumber("seed", "seed");
@@ -86,6 +94,9 @@ function syncControlsFromState() {
     else el.value = state[key];
   });
   renderColorPaletteRows();
+  ["modelWeight0", "modelWeight1", "modelWeight2"].forEach((id, i) => {
+    document.getElementById(id).value = state.modelWeights[i];
+  });
   toggleSubgroup(state.objectSizeMode, "fixed", "objectSize-fixed-group", "objectSize-range-group");
   ["X", "Y", "Z"].forEach((axis) => {
     document
@@ -105,6 +116,7 @@ document.getElementById("reset-btn").addEventListener("click", () => {
   Object.assign(state, defaultState, {
     colorPalette: [...defaultState.colorPalette],
     colorWeights: [...defaultState.colorWeights],
+    modelWeights: [...defaultState.modelWeights],
   });
   syncControlsFromState();
   scheduleApply();

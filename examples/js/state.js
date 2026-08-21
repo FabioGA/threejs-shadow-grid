@@ -11,6 +11,10 @@ export const defaultState = {
   arrangement: "grid",
   jitter: 0.4,
   rowOffset: 0,
+  // Relative weight per entry in models.js (same index order) - how often
+  // each bundled STL renders. Equal by default, matching the implicit
+  // equal-random pick an unweighted `models` array would give.
+  modelWeights: [1, 1, 1],
   rotationXMode: "fixed",
   rotationXDeg: 0,
   rotationYMode: "fixed",
@@ -48,4 +52,5 @@ export const state = {
   ...defaultState,
   colorPalette: [...defaultState.colorPalette],
   colorWeights: [...defaultState.colorWeights],
+  modelWeights: [...defaultState.modelWeights],
 };

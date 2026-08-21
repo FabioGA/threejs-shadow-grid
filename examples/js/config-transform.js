@@ -1,13 +1,15 @@
 // Conversion between the playground's flat control state (state.js) and a
 // real GridConfig, in both directions.
+import { models } from "./models.js";
 
 export function axisRotationValue(mode, deg) {
   return mode === "random" ? "random" : deg;
 }
 
-/** Turns playground state into a real GridConfig patch (no container/models - those stay fixed on the live instance). */
+/** Turns playground state into a real GridConfig patch (no container - that stays fixed on the live instance). */
 export function buildConfig(s) {
   return {
+    models: models.map((model, i) => ({ model, weight: s.modelWeights[i] })),
     cellSize: s.cellSize,
     objectSize: s.objectSizeMode === "range" ? { min: s.objectSizeMin, max: s.objectSizeMax } : s.objectSize,
     arrangement: s.arrangement,
@@ -58,12 +60,14 @@ export function generateCode(s) {
       ? `[\n${s.colorPalette.map((c, i) => `    { color: "${c}", weight: ${s.colorWeights[i]} },`).join("\n")}\n  ]`
       : `"${s.colorSingle}"`;
   const backgroundColor = s.backgroundTransparent ? '"transparent"' : `"${s.backgroundColor}"`;
+  const modelNames = ["model-a", "model-b", "model-c"];
+  const modelsCode = `[\n${modelNames.map((name, i) => `    { model: "/path/to/${name}.stl", weight: ${s.modelWeights[i]} },`).join("\n")}\n  ]`;
 
   return `import { ShadowGrid } from "threejs-shadow-grid";
 
 const grid = new ShadowGrid({
   container: "#your-container",
-  models: "/path/to/model.stl", // one URL, or an array of them
+  models: ${modelsCode}, // one URL, an array of them, or [{ model, weight }] to control the mix
   cellSize: ${s.cellSize},
   objectSize: ${objectSize},
   arrangement: "${s.arrangement}",
@@ -98,6 +102,16 @@ const grid = new ShadowGrid({
 
 /** Inverse of `buildConfig`: merges a (possibly partial) GridConfig-shaped object back into playground `state`. */
 export function applyConfigToState(config, state) {
+  // Only adopted when it matches this demo's fixed 3-model list shape
+  // (weighted entries, same length as models.js) - a pasted config using a
+  // different model list can't be represented by this demo's fixed-3 UI.
+  if (
+    Array.isArray(config.models) &&
+    config.models.length === models.length &&
+    config.models.every((entry) => entry && typeof entry === "object" && "weight" in entry)
+  ) {
+    state.modelWeights = config.models.map((entry) => entry.weight);
+  }
   if ("cellSize" in config) state.cellSize = config.cellSize;
   if ("objectSize" in config) {
     if (config.objectSize && typeof config.objectSize === "object") {

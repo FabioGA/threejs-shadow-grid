@@ -42,6 +42,7 @@ function randomBoxConfig() {
   }
 
   return {
+    models: models.map((model) => ({ model, weight: randInt(1, 10) })),
     cellSize: randInt(90, 260),
     objectSize,
     arrangement,
