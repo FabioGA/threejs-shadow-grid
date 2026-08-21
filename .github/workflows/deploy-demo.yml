@@ -1,0 +1,70 @@
+name: Deploy demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Assemble Pages site
+        run: |
+          set -e
+          rm -rf site
+          mkdir -p site/dist site/node_modules/three/build site/node_modules/three/examples/jsm/loaders
+          cp -r examples site/examples
+          cp -r dist/. site/dist/
+          cp node_modules/three/build/three.module.js site/node_modules/three/build/three.module.js
+          cp node_modules/three/examples/jsm/loaders/STLLoader.js site/node_modules/three/examples/jsm/loaders/STLLoader.js
+
+          # examples/demo.html and examples/js/models.js use root-absolute paths
+          # (correct for local dev, served from the repo root via `http-server .`)
+          # which would 404 under GitHub Pages' /<repo>/ project-site subpath.
+          # Rewrite only the copies under site/, never the tracked source files.
+          sed -i \
+            -e 's#href="/examples/demo.css"#href="demo.css"#' \
+            -e 's#"threejs-shadow-grid": "/dist/index.js"#"threejs-shadow-grid": "../dist/index.js"#' \
+            -e 's#"three": "/node_modules/three/build/three.module.js"#"three": "../node_modules/three/build/three.module.js"#' \
+            -e 's#"three/examples/jsm/loaders/STLLoader.js": "/node_modules/three/examples/jsm/loaders/STLLoader.js"#"three/examples/jsm/loaders/STLLoader.js": "../node_modules/three/examples/jsm/loaders/STLLoader.js"#' \
+            -e 's#src="/examples/js/playground.js"#src="js/playground.js"#' \
+            site/examples/demo.html
+
+          sed -i -e 's#/examples/models/#models/#g' site/examples/js/models.js
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
