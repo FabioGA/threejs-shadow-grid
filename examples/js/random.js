@@ -90,6 +90,7 @@ function biasedLightColor(palette) {
   return randColor();
 }
 
+// Scheme generator by TheColorAPI (thecolorapi.com), created by Josh Beckman - thanks, Josh!
 const SCHEME_MODES = ["monochrome", "analogic", "complement", "analogic-complement", "triad", "quad"];
 
 async function fetchColorScheme(seedHex, mode, count) {

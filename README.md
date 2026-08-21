@@ -262,3 +262,5 @@ MIT
 ---
 
 Made with ❤️ by [Fabio](https://github.com/FabioGA)
+
+The demo's "Randomize" palettes are generated with [TheColorAPI](https://www.thecolorapi.com), by [Josh Beckman](https://www.joshbeckman.org) - thanks, Josh!
