@@ -45,13 +45,10 @@ function normalizeGeometry(geometry: THREE.BufferGeometry, targetSize: number): 
   return geometry;
 }
 
-// Caches the *raw* (un-normalized) parsed geometry per URL, so re-fetching
-// the same URL is avoided even if objectSize changes between calls (each
-// call normalizes its own clone rather than mutating a shared instance).
-// Keyed by URL string only - an ArrayBuffer source is already in memory (no
-// network fetch to dedupe), and since the exact same ArrayBuffer reference is
-// essentially never passed twice, caching by its identity would just retain
-// every ArrayBuffer-sourced geometry forever with no benefit.
+// Caches the raw (un-normalized) parsed geometry per URL, so re-fetching is
+// avoided even if objectSize changes (each call normalizes its own clone).
+// Keyed by URL only - an ArrayBuffer source is already in memory, and the
+// same reference is essentially never passed twice.
 const rawCache = new Map<string, Promise<THREE.BufferGeometry>>();
 
 function loadRaw(source: ModelSource): Promise<THREE.BufferGeometry> {

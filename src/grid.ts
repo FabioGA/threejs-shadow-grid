@@ -34,15 +34,10 @@ function fractionalPart(value: number): number {
 }
 
 /**
- * Builds and maintains the InstancedMesh grid: given a set of loaded
- * geometries and the visible viewport size (in world units), it works out
- * how many rows/columns are needed to fully cover the viewport - plus a
- * small overscan margin - and places one object per cell.
- *
- * Rebuilding (on resize, or when config/geometries change) recreates the
- * InstancedMeshes sized exactly for the new cell count, which is what
- * makes the grid keep "filling all available space" as a container is
- * resized or the window is scrolled/resized.
+ * Builds and maintains the InstancedMesh grid: given loaded geometries and
+ * the visible viewport size (world units), works out rows/columns needed
+ * to cover it (plus overscan) and places one object per cell. Rebuilding
+ * recreates the InstancedMeshes sized for the new cell count.
  */
 export class GridBuilder {
   private scene: THREE.Scene;
@@ -57,12 +52,10 @@ export class GridBuilder {
   setGeometries(geometries: THREE.BufferGeometry[]) {
     this.geometries.forEach((g) => g.dispose());
     this.geometries = geometries;
-    // One shared material per model (per-instance color comes from the
-    // InstancedMesh color buffer, so all instances of a model share one
-    // material instance regardless of their individual color). Actual
-    // roughness/metalness/clearcoat are set from `hardness` in rebuild()
-    // below, so they stay in sync with config changes that don't reload
-    // models (materials persist across rebuilds, only geometry does not).
+    // One shared material per model - per-instance color comes from the
+    // InstancedMesh color buffer instead. Materials persist across
+    // rebuilds (only geometry doesn't); roughness/metalness/clearcoat are
+    // applied from `hardness` in rebuild() below.
     this.materials.forEach((m) => m.dispose());
     this.materials = geometries.map(() => new THREE.MeshPhysicalMaterial());
   }
@@ -95,8 +88,8 @@ export class GridBuilder {
 
     const cellSizeUnits = config.cellSize / PIXELS_PER_UNIT;
     const overscanCells = Math.max(0, Math.round(config.overscan * 4));
-    // rowOffset can shift a row by up to nearly a full cell width; one extra
-    // column on each side keeps that shift from exposing a gap at the edge.
+    // rowOffset can shift a row by nearly a full cell width; one extra
+    // column on each side avoids exposing a gap at the edge.
     const rowOffsetMargin = config.rowOffset !== 0 ? 1 : 0;
 
     const columns = Math.max(1, Math.ceil(viewportWidthUnits / cellSizeUnits) + (overscanCells + rowOffsetMargin) * 2);
@@ -106,20 +99,15 @@ export class GridBuilder {
     const rng = createRng(config.seed ^ (columns * 73856093) ^ (rows * 19349663));
 
     // Geometry is normalized (in loaders.ts) to the largest size objectSize
-    // can resolve to; when objectSize is a { min, max } range, each instance
-    // then scales down from that reference toward its randomly picked size.
+    // can resolve to; a { min, max } range then scales each instance down from that reference.
     const referenceSize = maxObjectSize(config.objectSize);
 
-    // Built once per rebuild (not per cell) so a weighted palette can
-    // pre-partition the exact `total` instance count across colors.
+    // Built once per rebuild (not per cell), so weighted colors/models can
+    // pre-partition the exact `total` instance count instead of an independent per-cell dice roll.
     const colorPicker = createColorPicker(config.colors, total, rng);
-    // Same idea for models.modelWeights: pre-partition the exact `total`
-    // count across models when weighted, instead of an independent
-    // per-cell dice roll.
     const modelPicker = createModelIndexPicker(this.geometries.length, config.modelWeights, total, rng);
 
-    // Pass 1: decide per-cell model index + color + transform jitter, and
-    // tally how many instances each model needs.
+    // Pass 1: decide per-cell model index + color + transform jitter, and tally instances per model.
     type CellPlan = {
       modelIndex: number;
       x: number;

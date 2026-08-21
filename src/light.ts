@@ -11,73 +11,30 @@ import type { LightConfig } from "./types";
 
 const TWO_PI = Math.PI * 2;
 
-/**
- * Angular frequencies (rad/s, before the sweepSpeed multiplier) for the two
- * sine terms summed per axis. Deliberately an incommensurate (non integer-
- * ratio) mix so the combined path only very loosely, if ever, repeats
- * within a normal viewing session, and - critically - the target position
- * is a continuous function of time that never comes to rest at a fixed
- * point (unlike a "pick a waypoint and ease to it" scheme, which visibly
- * pauses once it arrives and before the next waypoint is picked).
- */
+/** Incommensurate sine frequencies (rad/s) so the sweep path never repeats or comes to rest at a fixed point. */
 const SWEEP_X_FREQ_1 = 0.21;
 const SWEEP_X_FREQ_2 = 0.13;
 const SWEEP_Y_FREQ_1 = 0.17;
 const SWEEP_Y_FREQ_2 = 0.09;
 
-/**
- * How long (in seconds) "auto" mode keeps following a stationary pointer
- * before giving up on it and resuming the auto-sweep. Long enough that
- * briefly pausing the pointer to look at something doesn't interrupt the
- * follow, short enough that a pointer left resting in place doesn't leave
- * the light frozen there indefinitely.
- */
+/** Seconds "auto" mode follows a stationary pointer before resuming the auto-sweep. */
 const AUTO_IDLE_RESUME_SECONDS = 3;
 
-/**
- * Reference duration (seconds), at the default sweepSpeed of 1, for the
- * onset ramp after a switch between pointer-follow and auto-sweep - see
- * modeTransitionSeconds(). Without it, `current`'s catch-up speed would jump
- * straight to full pace the instant the source switches, which reads as a
- * sudden jerk even though (see update()'s `sweepStepDistance` cap for the
- * "resuming the sweep" direction) that pace itself is capped at the sweep's
- * own cruising speed - a standing start still needs a beat to ease into
- * motion at all, or it looks like a twitch rather than a glide.
- */
+/** Onset-ramp duration (seconds, at sweepSpeed 1) after a pointer<->sweep switch - see modeTransitionSeconds(). */
 const BASE_MODE_TRANSITION_SECONDS = 1.5;
 
-/**
- * Floor on the sweepSpeed used to compute the transition duration (see
- * modeTransitionSeconds()), so a near-zero or zero sweepSpeed - which would
- * otherwise make the sweep motion itself nearly or fully stationary anyway
- * - can't blow the ramp up to an absurdly long (or divide-by-zero) duration.
- */
+/** Floor on sweepSpeed used for the transition duration, so a near-zero speed can't blow it up (or divide by zero). */
 const MIN_SWEEP_SPEED_FOR_TRANSITION = 0.05;
 
 /**
- * Owns the single shadow-casting light plus an ambient fill light, and
- * drives its movement from either the pointer (mouse/pen) or, on
- * touch/no-pointer devices, a continuous organic drift (layered sine waves
- * at incommensurate frequencies) so the "moving shadow" effect never
- * freezes, never snaps, and never visibly pauses at any point along its
- * path - it's always in motion, and it never repeats a fixed loop either.
+ * Owns the shadow-casting light plus an ambient fill light, driven by
+ * either the pointer or (on touch/no-pointer devices) a continuous sine
+ * drift so the shadow is always in motion and never repeats.
  *
- * Two light types are supported (`LightConfig.type`):
- * - "sun" - a `THREE.DirectionalLight` whose angle swings with the
- *   pointer/sweep, cheap to render even with hundreds of grid instances
- *   (an orthographic shadow camera, one shadow map). Every object's shadow
- *   points the same way and is roughly the same length, regardless of
- *   where it sits in the grid - real parallel-ray sunlight.
- * - "cursor" - a `THREE.SpotLight` positioned directly above wherever the
- *   pointer/sweep currently is, aimed straight down at that spot. Because
- *   it radiates from a point rather than a fixed angle, shadows genuinely
- *   vary per-object based on distance to that point - still a single
- *   shadow map (unlike a `THREE.PointLight`, which would need a 6-face
- *   cubemap), just a perspective one instead of an orthographic one.
- *
- * This is the piece that lets non-lighting-experts get good results: the
- * public surface is just a "style" preset plus a handful of friendly
- * dials, never a raw Three.js light API.
+ * `LightConfig.type`: "sun" is a DirectionalLight (parallel rays, one
+ * shadow direction/length for every object). "cursor" is a SpotLight
+ * positioned above the pointer/sweep point, so shadows vary by distance
+ * to that point.
  */
 export class LightRig {
   readonly ambient: THREE.AmbientLight;
@@ -91,32 +48,25 @@ export class LightRig {
   private sweepTime = 0;
   private sweepPhaseX = Math.random() * TWO_PI;
   private sweepPhaseY = Math.random() * TWO_PI;
-  /** Seconds since the last real pointer movement while locked onto it in "auto" mode - see AUTO_IDLE_RESUME_SECONDS. */
+  /** Seconds since the last pointer movement while locked onto it in "auto" mode - see AUTO_IDLE_RESUME_SECONDS. */
   private idleSeconds = 0;
-  /** Seconds elapsed since the last pointer<->auto-sweep switch; starts at Infinity (no ramp pending) - see setUsingPointer() and modeTransitionSeconds(). */
+  /** Seconds since the last pointer<->auto-sweep switch; Infinity = no ramp pending - see setUsingPointer(). */
   private transitionElapsed = Infinity;
   private reach = 4.5;
   private lightDistance = 7;
-  /** "sun" light's/"cursor" light's shadow frustum half-extents, in world units - set by setShadowBounds(). */
+  /** Shadow frustum half-extents, in world units - set by setShadowBounds(). */
   private halfWidthUnits = 5;
   private halfHeightUnits = 5;
-  /** "cursor" light's height above the grid plane, in world units, as configured (before any full-coverage flooring). */
+  /** "cursor" light's configured height above the grid plane, in world units, before full-coverage flooring. */
   private cursorHeightConfigured = 7;
-  /** "cursor" light's actual height above the grid plane, in world units, after flooring for full coverage - see applyCursorShadowBounds(). */
+  /** "cursor" light's actual height, in world units, after flooring for full coverage - see applyCursorShadowBounds(). */
   private cursorHeightWorld = 7;
-  // Listened on window/document rather than the container: the container is
-  // typically a full-bleed background sitting *behind* real page content
-  // (z-index-wise), so page content stacked on top of it - text, the demo's
-  // own control panel, anything - constantly "steals" the browser's
-  // hit-test target as the pointer crosses it. A listener scoped to the
-  // container only fires while the container itself is the topmost element
-  // under the pointer, so on a typical page that's a small, gappy sliver of
-  // the viewport - not the reliable "shadow follows the mouse anywhere on
-  // the page" effect this is meant to be. Listening on window/document and
-  // computing inside/outside from the container's own bounding rect (rather
-  // than from native pointerenter/pointerleave, which fire off the same
-  // occluded hit-test) sidesteps that entirely and also naturally covers a
-  // full-viewport container, where "inside" is just "anywhere on screen".
+  // Listened on window/document, not the container: the container often
+  // sits behind page content (z-index-wise), so a container-scoped listener
+  // only fires while it's the topmost hit-test target - a small, gappy
+  // sliver of the page. Computing inside/outside from the container's own
+  // bounding rect instead gives the intended "follows the mouse anywhere
+  // on the page" behavior.
   private onWindowPointerMove = (e: PointerEvent) => this.handleWindowPointerMove(e);
   private onDocumentPointerLeave = () => this.handleDocumentPointerLeave();
 
@@ -128,18 +78,9 @@ export class LightRig {
     this._key = this.createLight(config.type);
     this.ambient = new THREE.AmbientLight(0xffffff, 1);
 
-    // With mode "auto" (the default), starts in "auto sweep" mode (no
-    // pointer activity has happened yet, so there's nothing to follow); the
-    // first real pointermove - mouse, pen, or a touch drag - over the
-    // container switches to "follow the pointer" mode, and moving off the
-    // container (or off the page entirely) drops back to sweeping instead
-    // of freezing the light in place - and so does the pointer simply
-    // sitting still for AUTO_IDLE_RESUME_SECONDS without leaving, so the
-    // light never stays parked indefinitely just because the pointer
-    // stopped moving. This naturally covers touch devices too: if they
-    // never fire a hover-style pointermove, the rig just keeps sweeping.
-    // mode "pointer"/"sweep" pin one of those two behaviors regardless of
-    // actual pointer activity/position.
+    // mode "auto" (default) starts sweeping, switches to pointer-follow on
+    // the first pointermove, and drops back to sweeping when the pointer
+    // leaves or idles - "pointer"/"sweep" pin one behavior regardless.
     this.usingPointer = config.mode === "pointer";
 
     this.scene.add(this._key, this._key.target, this.ambient);
@@ -172,10 +113,8 @@ export class LightRig {
     if (config.mode === "sweep") this.setUsingPointer(false);
     if (config.mode === "pointer") this.setUsingPointer(true);
     this.applyStyle();
-    // Re-derive shadow bounds (cursor cone angle/height clamp, sun's far
-    // plane) from the new config right away, using the last-known viewport
-    // extent - don't rely on the caller also calling setShadowBounds()
-    // after this (ShadowGrid only does that on an actual resize/rebuild).
+    // Re-derive shadow bounds from the new config right away - the caller
+    // only calls setShadowBounds() again on an actual resize/rebuild.
     this.setShadowBounds(this.halfWidthUnits, this.halfHeightUnits);
   }
 
@@ -204,12 +143,10 @@ export class LightRig {
 
   private applyCursorShadowBounds(key: THREE.SpotLight, halfWidthUnits: number, halfHeightUnits: number) {
     const diag = Math.hypot(halfWidthUnits, halfHeightUnits);
-    // A spotlight's cone has a hard angle limit, so it can't always cover
-    // the whole grid corner-to-corner at a very low configured height on a
-    // very large container - floor the *effective* height just enough to
-    // keep the whole grid lit, recomputed fresh from the configured value
-    // every time (not accumulated) so growing the container back out
-    // un-floors it again.
+    // A spotlight's cone has a hard angle limit, so a very low configured
+    // height can't always cover a large container corner-to-corner - floor
+    // the effective height, recomputed fresh each time so growing the
+    // container back out un-floors it again.
     const minHeightForFullCoverage = diag / Math.tan(MAX_CURSOR_ANGLE);
     this.cursorHeightWorld = Math.max(this.cursorHeightConfigured, minHeightForFullCoverage);
 
@@ -217,18 +154,13 @@ export class LightRig {
     key.angle = Math.min(MAX_CURSOR_ANGLE, Math.atan2(diag, this.cursorHeightWorld) * margin);
 
     const cam = key.shadow.camera as THREE.PerspectiveCamera;
-    // SpotLightShadow's camera.far only auto-tracks SpotLight.distance when
-    // distance is nonzero - decay is 0 (see applyStyle()) so distance is
-    // deliberately left at 0 too, meaning far never auto-updates. Set both
-    // planes explicitly, and keep the range as tight as the geometry allows:
-    // a perspective shadow map's depth precision is heavily front-loaded
-    // near its own near plane, so a needlessly wide near-far span (there's
-    // nothing to shadow far above the light, or far past the backdrop)
-    // starves the objects' actual depth range of precision and shows up as
-    // shadow-acne artifacts - a bright fringe bleeding into the shadow -
-    // especially on curved/angled surfaces.
-    const clearance = 3; // world units of headroom above the light's target, so tall objects directly under the light don't get near-clipped out of the shadow map
-    const farthestPoint = Math.sqrt(diag * diag + (this.cursorHeightWorld + 1) ** 2); // +1: the backdrop plane sits one unit behind the grid
+    // decay is 0 (see applyStyle()) so distance stays 0 too, meaning
+    // camera.far never auto-tracks it - set both planes explicitly, and as
+    // tight as possible: a perspective shadow map's depth precision is
+    // front-loaded near its near plane, so a needlessly wide span starves
+    // real objects of precision and shows up as shadow-acne artifacts.
+    const clearance = 3; // headroom above the target, so tall objects aren't near-clipped
+    const farthestPoint = Math.sqrt(diag * diag + (this.cursorHeightWorld + 1) ** 2); // +1: backdrop is one unit behind the grid
     cam.near = Math.max(0.1, this.cursorHeightWorld - clearance);
     cam.far = farthestPoint + 1;
     cam.updateProjectionMatrix();
@@ -287,18 +219,7 @@ export class LightRig {
     this.usingPointer = next;
   }
 
-  /**
-   * How long the post-switch onset ramp (see setUsingPointer() and its use
-   * in update()) takes to bring the catch-up speed up from a standstill,
-   * scaled inversely by `sweepSpeed` so the onset itself stays proportionate
-   * to the auto-sweep's own pace: a faster-configured sweep can ramp up to
-   * speed quickly without that reading as a snap, a slower, lazier one
-   * warrants a gentler, longer runway. This only shapes the first instant of
-   * a switch - the actual guarantee that `current` never outruns the
-   * sweep's cruising pace while resuming it comes from the per-frame
-   * `sweepStepDistance` cap in update(), which holds for as long as it
-   * takes to close the gap, however large.
-   */
+  /** Onset-ramp duration for a pointer<->sweep switch, scaled inversely by `sweepSpeed` (faster sweep, quicker ramp). */
   private modeTransitionSeconds(): number {
     return BASE_MODE_TRANSITION_SECONDS / Math.max(MIN_SWEEP_SPEED_FOR_TRANSITION, Math.abs(this.config.sweepSpeed));
   }
@@ -315,15 +236,11 @@ export class LightRig {
       e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
 
     if (this.config.mode === "pointer") {
-      // Pinned to pointer-follow: keep tracking the pointer everywhere on
-      // the page, not just while it happens to sit over the container -
-      // "never fall back to sweeping" per the mode's contract.
+      // Pinned: keep tracking anywhere on the page, never fall back to sweeping.
       this.setUsingPointer(true);
     } else if (inside) {
       this.setUsingPointer(true);
     } else {
-      // mode "auto", pointer outside the container - drop back to the
-      // automatic sweep rather than freezing the light at its last spot.
       this.setUsingPointer(false);
       return;
     }
@@ -332,11 +249,8 @@ export class LightRig {
     const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
 
     if (this.config.type === "cursor") {
-      // The exact point on the grid the pointer is over - not scaled by
-      // `intensity`, since "the exact point where the mouse is" is the
-      // whole point of this light type. The camera is orthographic and
-      // fixed at the origin, so mapping screen-normalized coordinates to
-      // the world-space grid plane is exact, with no raycasting needed.
+      // Orthographic camera fixed at the origin, so mapping screen-normalized
+      // coordinates to the world-space grid plane is exact - no raycasting needed.
       this.target.set(nx * this.halfWidthUnits, -ny * this.halfHeightUnits);
     } else {
       this.target.set(nx, -ny).multiplyScalar(this.reach * this.config.intensity);
@@ -344,9 +258,6 @@ export class LightRig {
   }
 
   private handleDocumentPointerLeave() {
-    // The pointer left the page/viewport entirely - drop back to the
-    // automatic sweep rather than freezing the light at its last spot,
-    // unless mode "pointer" pins it in place regardless.
     if (this.config.mode === "pointer") return;
     this.setUsingPointer(false);
   }
@@ -358,26 +269,16 @@ export class LightRig {
     if (this.usingPointer && this.config.mode === "auto") {
       this.idleSeconds += deltaSeconds;
       if (this.idleSeconds >= AUTO_IDLE_RESUME_SECONDS) {
-        // The pointer hasn't moved in a while - drop back to the automatic
-        // sweep rather than leaving the light frozen in place. The crossfade
-        // below eases `target` toward wherever the sweep is now, so
-        // switching back never produces a visible jump - and `sweepTime`
-        // (below) was never reset, so the sweep itself picks back up
-        // exactly where it would have been, not from a fresh start.
+        // sweepTime was never reset, so the sweep resumes where it would've been, not from scratch.
         this.setUsingPointer(false);
       }
     }
 
-    // How far the sweep's own formula moves this frame, at the *current*
-    // sweepTime vs. where it was a frame ago - a live measure of "the
-    // auto-sweep's own natural pace" that setUsingPointer() below caps
-    // `current`'s catch-up speed to, when resuming the sweep after a
-    // pointer-follow switch. 0 while the pointer is driving things instead.
+    // Distance the sweep formula moves this frame - the "natural pace" that
+    // setUsingPointer() below caps the catch-up speed to when resuming.
     let sweepStepDistance = 0;
     if (!this.usingPointer && this.config.autoSweepOnTouch) {
-      // For "cursor", roam over the actual visible grid extent instead of
-      // the sun's reach-scaled angular swing, so the wandering point
-      // visibly crosses the grid rather than just changing angle.
+      // "cursor" roams the actual grid extent; "sun" swings by angle instead.
       const reachX = isCursor
         ? this.halfWidthUnits * CURSOR_SWEEP_FRACTION * this.config.intensity
         : this.reach * this.config.intensity;
@@ -385,10 +286,12 @@ export class LightRig {
         ? this.halfHeightUnits * CURSOR_SWEEP_FRACTION * this.config.intensity
         : this.reach * this.config.intensity * 0.7;
       const sweepX = (t: number) =>
-        (Math.sin(t * SWEEP_X_FREQ_1 + this.sweepPhaseX) * 0.6 + Math.sin(t * SWEEP_X_FREQ_2 + this.sweepPhaseX * 1.7) * 0.4) *
+        (Math.sin(t * SWEEP_X_FREQ_1 + this.sweepPhaseX) * 0.6 +
+          Math.sin(t * SWEEP_X_FREQ_2 + this.sweepPhaseX * 1.7) * 0.4) *
         reachX;
       const sweepY = (t: number) =>
-        (Math.sin(t * SWEEP_Y_FREQ_1 + this.sweepPhaseY) * 0.6 + Math.sin(t * SWEEP_Y_FREQ_2 + this.sweepPhaseY * 1.7) * 0.4) *
+        (Math.sin(t * SWEEP_Y_FREQ_1 + this.sweepPhaseY) * 0.6 +
+          Math.sin(t * SWEEP_Y_FREQ_2 + this.sweepPhaseY * 1.7) * 0.4) *
         reachY;
 
       const prevSweepTime = this.sweepTime;
@@ -399,10 +302,8 @@ export class LightRig {
       this.target.set(x, y);
     }
 
-    // Ramp 0 -> 1 over modeTransitionSeconds() after a pointer<->auto-sweep
-    // switch (see setUsingPointer()) - used below to ease the catch-up in
-    // from a standstill rather than resuming at full pace the instant the
-    // source switches.
+    // Ramp 0 -> 1 over modeTransitionSeconds() after a mode switch, so the
+    // catch-up eases in from a standstill instead of jumping to full pace.
     const transitionDuration = this.modeTransitionSeconds();
     this.transitionElapsed = Math.min(transitionDuration, this.transitionElapsed + deltaSeconds);
     const t = this.transitionElapsed / transitionDuration;
@@ -410,15 +311,9 @@ export class LightRig {
 
     const alpha = Math.min(1, deltaSeconds * this.config.easing * rampScale);
     if (!this.usingPointer && this.config.autoSweepOnTouch) {
-      // Resuming the sweep: `target` may have jumped an arbitrary distance
-      // (the sweep's own clock kept ticking while the pointer was being
-      // followed, so it can be far from wherever the pointer left off), and
-      // closing that gap at the normal rate right away would show up as a
-      // burst of speed well above the sweep's own cruising pace before
-      // settling back down to it - "a fast move to a point, then normal
-      // speed." Capping the step at the sweep's own current pace instead
-      // (ramped in, per above) means `current` never outruns it - a bigger
-      // gap just takes longer to close, rather than being sprinted through.
+      // Resuming the sweep: target may have jumped far (its clock kept
+      // ticking while the pointer was followed) - cap the step at the
+      // sweep's own pace so closing the gap never looks like a burst of speed.
       const dx = (this.target.x - this.current.x) * alpha;
       const dy = (this.target.y - this.current.y) * alpha;
       const stepLength = Math.hypot(dx, dy);

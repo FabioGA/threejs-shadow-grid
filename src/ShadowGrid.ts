@@ -7,17 +7,11 @@ import { PIXELS_PER_UNIT } from "./defaults";
 import type { GridConfig, ResolvedGridConfig } from "./types";
 
 /**
- * ShadowGrid mounts a full-bleed, infinitely-tiling grid of 3D objects
- * into a container element. It fills 100% of the container at all times
- * (via ResizeObserver), and the container's own CSS positioning (static,
- * relative, or a fixed full-viewport wrapper) determines whether it reads
- * as a normal in-flow background or a pinned full-page one - see the
- * README for both recipes.
+ * Mounts a full-bleed, infinitely-tiling grid of 3D objects into a
+ * container element, filling it completely via ResizeObserver.
  *
- * Usage:
  *   const grid = new ShadowGrid({ container: '#hero', models: '/duck.stl' });
- *   // later
- *   grid.destroy();
+ *   grid.destroy(); // later
  */
 export class ShadowGrid {
   private config: ResolvedGridConfig;

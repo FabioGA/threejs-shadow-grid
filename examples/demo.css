@@ -39,13 +39,7 @@ p {
   opacity: 0.9;
 }
 
-/*
-  Both demo recipes live in a full-viewport-tall .section, so each one gets
-  a moment fully in view before the next scrolls in - rather than the two
-  being separated by one large, UI-free gap with nothing marking what's
-  ahead. #section-nav + .scroll-cue below are the "there's more" affordance
-  that gap used to rely on implicitly.
-*/
+/* Each demo recipe lives in a full-viewport-tall .section; #section-nav + .scroll-cue mark "there's more below". */
 .section {
   position: relative;
   min-height: 100vh;
@@ -58,14 +52,7 @@ p {
   justify-content: space-between;
 }
 
-/*
-  A full-width translucent band rather than a boxed card - spans the
-  section edge-to-edge so it never has to compete with the sticky config
-  button (bottom-right, see #playground-panel) for a corner. Deliberately
-  short (padding-driven height, not full-viewport) so most of the section -
-  and all of the dedicated .spacer right after it - stays clear for looking
-  at the live background with nothing drawn on top of it.
-*/
+/* Full-width translucent band, not a boxed card, so it never competes with #playground-panel for a corner. */
 .hero-band {
   width: 100%;
   max-width: none;
@@ -174,10 +161,7 @@ p {
   text-align: center;
 }
 
-/*
-  Deliberately empty and UI-free: this is where the full-page background
-  is meant to be seen with nothing drawn on top of it while it scrolls by.
-*/
+/* Deliberately empty: where the full-page background is meant to be seen with nothing on top. */
 .spacer {
   height: 60vh;
 }
@@ -185,9 +169,7 @@ p {
   height: 20vh;
 }
 
-/* --- Fixed section nav: a minimal "there are two demos, jump between
-   them" affordance so scrolling past the first never feels like reaching
-   the end of the page. --- */
+/* Fixed section nav: jump between the two demos. */
 #section-nav {
   position: fixed;
   left: 20px;
@@ -240,9 +222,7 @@ p {
   transform: translateX(0);
 }
 @media (max-width: 700px) {
-  /* Too little spare width for a left-edge nav without risking overlap
-     with the contained box's own top-left toolbar - the scroll cue and
-     ordinary scrolling still carry the "there's more below" job here. */
+  /* Not enough width for a left-edge nav without overlapping the box demo's own toolbar. */
   #section-nav {
     display: none;
   }
@@ -296,8 +276,7 @@ p {
   left: 16px;
   z-index: 2;
   display: flex;
-  /* Stacked, not side-by-side: keeps both controls in a narrow column
-     that never has to compete with box-demo's own width for space. */
+  /* Stacked, not side-by-side: avoids competing with box-demo's width. */
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
@@ -338,27 +317,14 @@ button {
   color-scheme: dark;
 }
 
-/*
-  --- Playground control panel ---
-  A plain div, not <details>/<summary>: Chromium (and others) never
-  let a <details>'s non-summary content shrink below its natural
-  content height when the <details> itself is a flex/scroll
-  container - flex-shrink/min-height on that content are silently
-  ignored - so overflow-y: auto below never actually engages and
-  content past max-height just gets clipped with no way to reach it.
-  A div + a toggle button sidesteps that entirely; #playground-toggle
-  below flips the `.open` class that <details> would otherwise have
-  handled via its `open` attribute.
-*/
+/* Playground control panel: a plain div + toggle button, not <details>/<summary> - Chromium never lets a <details>'s
+   content shrink below its natural height in a flex/scroll container, so overflow-y: auto below wouldn't engage. */
 #playground-panel {
   position: fixed;
   bottom: 16px;
   right: 16px;
   z-index: 20;
-  /* Collapsed: shrink to exactly fit the toggle button (see :not(.open)
-     below) - a full-width bar here would reach across and sit on top of
-     the hero's centered scroll cue. Open: wide enough for the control
-     panel and code/JSON editors, which need the room. */
+  /* Collapsed: shrinks to fit the toggle button (see :not(.open) below), clear of the hero's scroll cue. */
   width: min(94vw, 760px);
   max-height: calc(100vh - 32px);
   background: rgba(10, 10, 15, 0.94);
@@ -406,23 +372,14 @@ button {
 }
 
 .panel-body {
-  /* flex: 1 1 auto + min-height: 0 is what lets overflow-y: auto
-     actually kick in below - without it, a flex child never shrinks
-     below its content's natural height, so on a short viewport this
-     just grows past #playground-panel's max-height and gets clipped
-     by its `overflow: hidden` with no way to scroll to it. */
+  /* flex: 1 1 auto + min-height: 0 lets overflow-y: auto actually engage - without it a flex child never
+     shrinks below its content height, so it grows past max-height and gets clipped instead of scrolling. */
   flex: 1 1 auto;
   min-height: 0;
   padding: 14px 16px 16px;
   overflow-y: auto;
 }
-/*
-  Always a single stacked column - controls on top, generated
-  code/JSON below - rather than a side-by-side grid. Side-by-side
-  used to squeeze the code panel into a narrow column that competed
-  for space with the control fieldsets; stacking gives the code/JSON
-  editor the panel's full width, clear of the buttons/controls above.
-*/
+/* Single stacked column (controls, then code/JSON) so the editor gets the panel's full width. */
 .panel-grid {
   display: grid;
   grid-template-columns: 1fr;

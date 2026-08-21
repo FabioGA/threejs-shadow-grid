@@ -22,14 +22,7 @@ export const DEFAULT_SHADOWS = true;
 
 export const DEFAULT_HARDNESS = 0;
 
-/**
- * Rubber-like-to-glossy material tuning for grid objects: `hardness` (see
- * GridConfig) linearly blends roughness/metalness/clearcoat between these
- * "soft" (hardness 0, the default - a matte rubber look with near-zero
- * metalness and a soft clearcoat sheen) and "hard" (hardness 1 - smoother,
- * more metallic, with a sharper clearcoat) endpoints, so objects can read
- * anywhere from soft rubber to a hard, glossy, reflective surface.
- */
+/** Rubber-like-to-glossy material tuning: `hardness` (see GridConfig) lerps roughness/metalness/clearcoat between these endpoints. */
 export const OBJECT_MATERIAL_ROUGHNESS_SOFT = 0.9;
 export const OBJECT_MATERIAL_ROUGHNESS_HARD = 0.15;
 export const OBJECT_MATERIAL_METALNESS_SOFT = 0;
@@ -39,29 +32,18 @@ export const OBJECT_MATERIAL_CLEARCOAT_HARD = 0.9;
 export const OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_SOFT = 0.35;
 export const OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_HARD = 0.05;
 
-/**
- * Maps friendly light "style" presets to concrete Three.js-ish values.
- * These numbers are deliberately hand-tuned so every preset looks good
- * without the caller ever seeing a raw intensity/angle value.
- */
+/** Maps friendly light "style" presets to hand-tuned Three.js-ish values. */
 export const LIGHT_STYLE_PRESETS: Record<
   LightStyle,
   {
     intensity: number;
-    /**
-     * SpotLight.intensity for `type: "cursor"`. Distinct from `intensity`
-     * above in principle (SpotLight.intensity is photometric/candela in
-     * three.js's physically-correct lighting, with a 1/distance^2 falloff
-     * by default) - but decay is fixed at 0 for the cursor light (see
-     * light.ts) specifically to cancel that falloff out, which makes it
-     * behave at the same order of magnitude as DirectionalLight.intensity.
-     */
+    /** SpotLight.intensity for `type: "cursor"` - decay is fixed at 0 (see light.ts) to cancel its 1/distance^2 falloff. */
     cursorIntensity: number;
     distance: number;
     lightSize: number; // approximates a soft-shadow area light via PCFSoft + radius
     shadowMapSize: number;
     ambientBoost: number;
-    /** Default `hardness` (see LightConfig) for this style, when the caller doesn't set one explicitly. */
+    /** Default `hardness` (see LightConfig) when the caller doesn't set one explicitly. */
     defaultHardness: number;
   }
 > = {
@@ -106,13 +88,7 @@ export const MAX_SHADOW_MAP_SIZE = 4096;
 export const MIN_CURSOR_HEIGHT = 40;
 export const MAX_CURSOR_HEIGHT = 4000;
 
-/**
- * Widest half-angle (radians) the "cursor" light's spotlight cone is
- * allowed to open to - safely under Three.js's hard cap of PI/2 so the
- * cone never degenerates into extreme perspective shadow-map distortion
- * at its edge. If the grid is wider than `cursorHeight` can cover at this
- * angle, the effective height is floored instead of exceeding it.
- */
+/** Widest half-angle (radians) the "cursor" spotlight cone opens to - under Three.js's PI/2 cap to avoid edge distortion. */
 export const MAX_CURSOR_ANGLE = 1.15;
 
 /** How far the "cursor" light's auto-sweep roams, as a fraction of the visible grid half-extent. */
@@ -126,15 +102,11 @@ export const DEFAULT_LIGHT: Required<LightConfig> = {
   ambient: 0.45,
   easing: 4,
   color: "#ffffff",
-  // Actual default is style-dependent (see LIGHT_STYLE_PRESETS.defaultHardness);
-  // resolveLight() always recomputes this unless the caller sets hardness explicitly.
+  // hardness/shadowMapSize/cursorHeight are style-dependent; resolveLight()
+  // always recomputes them unless the caller sets one explicitly.
   hardness: 0.5,
-  // Actual default is style-dependent (see LIGHT_STYLE_PRESETS.shadowMapSize);
-  // resolveLight() always recomputes this unless the caller sets shadowMapSize explicitly.
   shadowMapSize: 1536,
   mode: "auto",
   type: "sun",
-  // Actual default is style-dependent (see LIGHT_STYLE_PRESETS.distance);
-  // resolveLight() always recomputes this unless the caller sets cursorHeight explicitly.
   cursorHeight: 700,
 };
