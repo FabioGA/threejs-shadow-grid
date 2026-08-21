@@ -99,6 +99,22 @@ describe("LightRig", () => {
     expect(second.x).not.toBe(lockedX);
   });
 
+  it("resumes auto-sweep after the pointer stays still for a while, in 'auto' mode", () => {
+    const rig = makeRig(buildLightConfig({ mode: "auto", easing: 100 }));
+    move(100, 0);
+    rig.update(1); // locks onto the pointer
+    const locked = rig.key.position.clone();
+
+    rig.update(1); // 2s idle total - still under the resume threshold, stays locked
+    expect(rig.key.position.distanceTo(locked)).toBeCloseTo(0, 5);
+
+    rig.update(5); // comfortably past the idle threshold - resumes sweeping
+    const afterResume = rig.key.position.clone();
+    rig.update(0.5);
+    const later = rig.key.position.clone();
+    expect(afterResume.distanceTo(later)).toBeGreaterThan(0); // moving again, not still locked
+  });
+
   it("ignores pointer movement entirely in 'sweep' mode", () => {
     const rig = makeRig(buildLightConfig({ mode: "sweep", easing: 100 }));
     move(100, 0);

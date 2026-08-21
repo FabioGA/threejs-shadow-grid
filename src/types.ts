@@ -125,7 +125,8 @@ export interface LightConfig {
    * Forces the light's input mode instead of the default hybrid behavior:
    * - "auto" (default) - starts in touch auto-sweep, switches to following
    *   the pointer on the first real pointer movement, and back to sweeping
-   *   when the pointer leaves the container.
+   *   when the pointer leaves the container - or after it sits still for a
+   *   few seconds without leaving.
    * - "pointer" - always follows the pointer, never falls back to sweeping.
    * - "sweep" - always auto-sweeps, ignoring the pointer entirely.
    * Useful for previewing the touch experience on a desktop, or pinning

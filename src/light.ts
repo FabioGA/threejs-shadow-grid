@@ -26,6 +26,15 @@ const SWEEP_Y_FREQ_1 = 0.17;
 const SWEEP_Y_FREQ_2 = 0.09;
 
 /**
+ * How long (in seconds) "auto" mode keeps following a stationary pointer
+ * before giving up on it and resuming the auto-sweep. Long enough that
+ * briefly pausing the pointer to look at something doesn't interrupt the
+ * follow, short enough that a pointer left resting in place doesn't leave
+ * the light frozen there indefinitely.
+ */
+const AUTO_IDLE_RESUME_SECONDS = 3;
+
+/**
  * Owns the single shadow-casting light plus an ambient fill light, and
  * drives its movement from either the pointer (mouse/pen) or, on
  * touch/no-pointer devices, a continuous organic drift (layered sine waves
@@ -62,6 +71,8 @@ export class LightRig {
   private sweepTime = 0;
   private sweepPhaseX = Math.random() * TWO_PI;
   private sweepPhaseY = Math.random() * TWO_PI;
+  /** Seconds since the last real pointer movement while locked onto it in "auto" mode - see AUTO_IDLE_RESUME_SECONDS. */
+  private idleSeconds = 0;
   private reach = 4.5;
   private lightDistance = 7;
   /** "sun" light's/"cursor" light's shadow frustum half-extents, in world units - set by setShadowBounds(). */
@@ -100,10 +111,13 @@ export class LightRig {
     // first real pointermove - mouse, pen, or a touch drag - over the
     // container switches to "follow the pointer" mode, and moving off the
     // container (or off the page entirely) drops back to sweeping instead
-    // of freezing the light in place. This naturally covers touch devices
-    // too: if they never fire a hover-style pointermove, the rig just keeps
-    // sweeping. mode "pointer"/"sweep" pin one of those two behaviors
-    // regardless of actual pointer activity/position.
+    // of freezing the light in place - and so does the pointer simply
+    // sitting still for AUTO_IDLE_RESUME_SECONDS without leaving, so the
+    // light never stays parked indefinitely just because the pointer
+    // stopped moving. This naturally covers touch devices too: if they
+    // never fire a hover-style pointermove, the rig just keeps sweeping.
+    // mode "pointer"/"sweep" pin one of those two behaviors regardless of
+    // actual pointer activity/position.
     this.usingPointer = config.mode === "pointer";
 
     this.scene.add(this._key, this._key.target, this.ambient);
@@ -238,6 +252,8 @@ export class LightRig {
   private handleWindowPointerMove(e: PointerEvent) {
     if (this.config.mode === "sweep") return;
 
+    this.idleSeconds = 0;
+
     const rect = this.container.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
 
@@ -284,6 +300,19 @@ export class LightRig {
   /** Advances the auto-sweep (if active) and eases the light toward its target. Call once per frame. */
   update(deltaSeconds: number) {
     const isCursor = this.config.type === "cursor";
+
+    if (this.usingPointer && this.config.mode === "auto") {
+      this.idleSeconds += deltaSeconds;
+      if (this.idleSeconds >= AUTO_IDLE_RESUME_SECONDS) {
+        // The pointer hasn't moved in a while - drop back to the automatic
+        // sweep rather than leaving the light frozen in place. The lerp
+        // below eases `current` toward `target` regardless of why `target`
+        // changed, so switching back never produces a visible jump - and
+        // `sweepTime` (below) was never reset, so the sweep itself picks
+        // back up exactly where it would have been, not from a fresh start.
+        this.usingPointer = false;
+      }
+    }
 
     if (!this.usingPointer && this.config.autoSweepOnTouch) {
       this.sweepTime += deltaSeconds * this.config.sweepSpeed;
