@@ -1,0 +1,372 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #eee;
+}
+
+/* --- Recipe A: full-page fixed background (also the playground target) --- */
+#bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+  padding: 6vh 8vw;
+  max-width: 640px;
+}
+
+h1 {
+  font-size: 2.2rem;
+  margin-top: 0;
+}
+p {
+  line-height: 1.6;
+  opacity: 0.9;
+}
+.spacer {
+  height: 140vh;
+}
+
+/* --- Recipe B: contained box --- */
+#box-demo {
+  position: relative;
+  width: min(90vw, 900px);
+  height: 420px;
+  margin: 6vh auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+#box-demo .toolbar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  display: flex;
+  /* Stacked, not side-by-side: the config playground panel is a tall
+     fixed sidebar pinned to the viewport's top-right, which can cover
+     box-demo's right portion regardless of box-demo's own width - a
+     narrow left-aligned column keeps both controls clear of it. */
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+#box-demo .label {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+#box-demo .randomize-btn {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #eee;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#box-demo .randomize-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+select,
+input,
+button {
+  font: inherit;
+  color: inherit;
+}
+#playground-panel select,
+#playground-panel input[type="number"] {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 5px;
+  padding: 2px 6px;
+  color-scheme: dark;
+}
+
+/*
+  --- Playground control panel ---
+  A plain div, not <details>/<summary>: Chromium (and others) never
+  let a <details>'s non-summary content shrink below its natural
+  content height when the <details> itself is a flex/scroll
+  container - flex-shrink/min-height on that content are silently
+  ignored - so overflow-y: auto below never actually engages and
+  content past max-height just gets clipped with no way to reach it.
+  A div + a toggle button sidesteps that entirely; #playground-toggle
+  below flips the `.open` class that <details> would otherwise have
+  handled via its `open` attribute.
+*/
+#playground-panel {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+  width: min(94vw, 760px);
+  max-height: calc(100vh - 32px);
+  background: rgba(10, 10, 15, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#playground-panel .panel-summary {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: inherit;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex: 0 0 auto;
+}
+#playground-panel .panel-summary .hint {
+  font-weight: 400;
+  opacity: 0.6;
+  font-size: 0.78rem;
+}
+#playground-panel .panel-summary .chev {
+  transition: transform 0.15s ease;
+  opacity: 0.7;
+}
+#playground-panel.open .panel-summary .chev {
+  transform: rotate(180deg);
+}
+#playground-panel:not(.open) .panel-body {
+  display: none;
+}
+
+.panel-body {
+  /* flex: 1 1 auto + min-height: 0 is what lets overflow-y: auto
+     actually kick in below - without it, a flex child never shrinks
+     below its content's natural height, so on a short viewport this
+     just grows past #playground-panel's max-height and gets clipped
+     by its `overflow: hidden` with no way to scroll to it. */
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 14px 16px 16px;
+  overflow-y: auto;
+}
+/*
+  Always a single stacked column - controls on top, generated
+  code/JSON below - rather than a side-by-side grid. Side-by-side
+  used to squeeze the code panel into a narrow column that competed
+  for space with the control fieldsets; stacking gives the code/JSON
+  editor the panel's full width, clear of the buttons/controls above.
+*/
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+fieldset {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 8px 12px 10px;
+  margin: 0 0 12px;
+}
+fieldset:last-child {
+  margin-bottom: 0;
+}
+legend {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.65;
+  padding: 0 4px;
+}
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 7px 0;
+  font-size: 0.8rem;
+}
+.field label {
+  flex: 1 1 auto;
+  opacity: 0.9;
+}
+.field input[type="range"] {
+  flex: 1.4 1 0;
+  width: 0;
+}
+.field .val {
+  width: 3.6em;
+  text-align: right;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+}
+.field input[type="number"] {
+  width: 5.5em;
+}
+.field input[type="color"] {
+  width: 2.1em;
+  height: 1.5em;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: none;
+}
+.field select {
+  flex: 1.4 1 0;
+}
+
+.axis-group {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px 8px 6px;
+  margin: 7px 0;
+}
+.axis-group-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.55;
+  margin: 3px 0 2px;
+}
+.subgroup {
+  display: none;
+  padding-left: 2px;
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  margin-left: 2px;
+}
+.subgroup.active {
+  display: block;
+}
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.palette-row input[type="color"] {
+  flex: none;
+}
+.palette-row input.weight {
+  width: 4.2em;
+}
+.palette-row .remove-color-btn {
+  flex: none;
+  width: 1.6em;
+  height: 1.6em;
+  line-height: 1;
+  padding: 0;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #eee;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.palette-row .remove-color-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+.palette-row .remove-color-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.add-color-btn {
+  margin-top: 6px;
+}
+
+.code-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+.code-header button,
+.reset-btn {
+  font-size: 0.76rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #eee;
+  cursor: pointer;
+}
+.code-header button:hover,
+.reset-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+pre#code-output {
+  flex: none;
+  max-height: 260px;
+  margin: 0;
+  padding: 12px;
+  background: #0c0c12;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  overflow: auto;
+  white-space: pre;
+}
+.code-header-actions {
+  display: flex;
+  gap: 6px;
+}
+.json-section {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+#config-json {
+  min-height: 140px;
+  margin: 0;
+  padding: 12px;
+  background: #0c0c12;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #eee;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+#config-json:focus {
+  outline: 1px solid rgba(255, 255, 255, 0.35);
+}
+.json-status {
+  min-height: 1.2em;
+  margin-top: 5px;
+  font-size: 0.76rem;
+  opacity: 0.9;
+  color: #8fffc8;
+}
+.json-status.error {
+  color: #ff9d9d;
+}
+.panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}

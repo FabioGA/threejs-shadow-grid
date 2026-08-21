@@ -1,0 +1,51 @@
+// Every GridConfig / LightConfig knob the playground exposes, as flat
+// control-friendly state (see config-transform.js for the conversion to/from
+// a real GridConfig). `state` is a single shared mutable object - every
+// module that needs to read/write it imports this same reference.
+export const defaultState = {
+  cellSize: 230,
+  objectSizeMode: "fixed",
+  objectSize: 95,
+  objectSizeMin: 60,
+  objectSizeMax: 140,
+  arrangement: "grid",
+  jitter: 0.4,
+  rowOffset: 0,
+  rotationXMode: "fixed",
+  rotationXDeg: 0,
+  rotationYMode: "fixed",
+  rotationYDeg: 0,
+  rotationZMode: "fixed",
+  rotationZDeg: 0,
+  overscan: 0.15,
+  maxInstances: 4000,
+  colorsMode: "single",
+  colorSingle: "#8fb8ff",
+  colorPalette: ["#8fb8ff", "#c58fff", "#8fffc8"],
+  colorWeights: [50, 30, 20],
+  backgroundColor: "#12121a",
+  backgroundTransparent: false,
+  matchBackground: false,
+  hardness: 0,
+  shadows: true,
+  maxPixelRatio: 2,
+  seed: 1337,
+  lightType: "sun",
+  cursorHeight: 700,
+  lightMode: "sweep",
+  lightStyle: "medium",
+  lightIntensity: 1,
+  autoSweepOnTouch: true,
+  sweepSpeed: 1,
+  ambient: 0.45,
+  easing: 4,
+  lightColor: "#ffffff",
+  lightHardness: 0.5,
+  shadowMapSize: 1536,
+};
+
+export const state = {
+  ...defaultState,
+  colorPalette: [...defaultState.colorPalette],
+  colorWeights: [...defaultState.colorWeights],
+};
