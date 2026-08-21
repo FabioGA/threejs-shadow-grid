@@ -36,7 +36,7 @@ export const defaultState = {
   seed: 1337,
   lightType: "sun",
   cursorHeight: 700,
-  lightMode: "sweep",
+  lightMode: "auto",
   lightStyle: "medium",
   lightIntensity: 1,
   autoSweepOnTouch: true,
