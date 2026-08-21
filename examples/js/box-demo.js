@@ -18,8 +18,8 @@ export const box = new ShadowGrid({
   rotation: "random",
 });
 
-document.getElementById("randomize-box-btn").addEventListener("click", () => {
-  const config = randomGridConfig(models);
+document.getElementById("randomize-box-btn").addEventListener("click", async () => {
+  const config = await randomGridConfig(models);
   box.update(config);
   document.getElementById("box-label").textContent = `contained box, arrangement: ${config.arrangement}`;
 });

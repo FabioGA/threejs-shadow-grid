@@ -119,8 +119,8 @@ function syncControlsFromState() {
   });
 }
 
-document.getElementById("randomize-bg-btn").addEventListener("click", () => {
-  applyConfigToState(randomGridConfig(models), state);
+document.getElementById("randomize-bg-btn").addEventListener("click", async () => {
+  applyConfigToState(await randomGridConfig(models), state);
   syncControlsFromState();
   scheduleApply();
 });
