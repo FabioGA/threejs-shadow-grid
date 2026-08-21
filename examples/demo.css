@@ -248,6 +248,38 @@ p {
   }
 }
 
+/* --- "Made with love" credit --- */
+#site-credit {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(10, 10, 15, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.74rem;
+  opacity: 0.85;
+  backdrop-filter: blur(6px);
+}
+#site-credit a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+#site-credit a:hover {
+  text-decoration: underline;
+}
+.pixel-heart {
+  width: 12px;
+  height: 12px;
+  fill: #ff5c8a;
+  shape-rendering: crispEdges;
+}
+
 /* --- Recipe B: contained box --- */
 #box-demo {
   position: relative;
