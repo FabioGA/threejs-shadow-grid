@@ -55,6 +55,18 @@ jobs:
 
           sed -i -e 's#/examples/models/#models/#g' site/examples/js/models.js
 
+          # No index.html ships at the site root (only examples/, dist/, and
+          # the vendored three.js runtime), so the bare Pages URL 404s.
+          # Redirect it straight to the demo.
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8" />
+          <title>threejs-shadow-grid demo</title>
+          <meta http-equiv="refresh" content="0; url=examples/demo.html" />
+          <link rel="canonical" href="examples/demo.html" />
+          <p><a href="examples/demo.html">Redirecting to the demo&hellip;</a></p>
+          HTML
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
