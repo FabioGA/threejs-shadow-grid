@@ -323,6 +323,10 @@ button {
   bottom: 16px;
   right: 16px;
   z-index: 20;
+  /* Collapsed: shrink to exactly fit the toggle button (see :not(.open)
+     below) - a full-width bar here would reach across and sit on top of
+     the hero's centered scroll cue. Open: wide enough for the control
+     panel and code/JSON editors, which need the room. */
   width: min(94vw, 760px);
   max-height: calc(100vh - 32px);
   background: rgba(10, 10, 15, 0.94);
@@ -334,6 +338,9 @@ button {
   flex-direction: column;
   overflow: hidden;
 }
+#playground-panel:not(.open) {
+  width: fit-content;
+}
 #playground-panel .panel-summary {
   all: unset;
   box-sizing: border-box;
@@ -342,6 +349,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  white-space: nowrap;
   user-select: none;
   font-weight: 600;
   font-size: 0.95rem;
@@ -349,6 +358,9 @@ button {
   color: inherit;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex: 0 0 auto;
+}
+#playground-panel:not(.open) .panel-summary {
+  border-bottom: none;
 }
 #playground-panel .panel-summary .chev {
   transition: transform 0.15s ease;
