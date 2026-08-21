@@ -35,6 +35,26 @@ const SWEEP_Y_FREQ_2 = 0.09;
 const AUTO_IDLE_RESUME_SECONDS = 3;
 
 /**
+ * Reference duration (seconds), at the default sweepSpeed of 1, for the
+ * onset ramp after a switch between pointer-follow and auto-sweep - see
+ * modeTransitionSeconds(). Without it, `current`'s catch-up speed would jump
+ * straight to full pace the instant the source switches, which reads as a
+ * sudden jerk even though (see update()'s `sweepStepDistance` cap for the
+ * "resuming the sweep" direction) that pace itself is capped at the sweep's
+ * own cruising speed - a standing start still needs a beat to ease into
+ * motion at all, or it looks like a twitch rather than a glide.
+ */
+const BASE_MODE_TRANSITION_SECONDS = 1.5;
+
+/**
+ * Floor on the sweepSpeed used to compute the transition duration (see
+ * modeTransitionSeconds()), so a near-zero or zero sweepSpeed - which would
+ * otherwise make the sweep motion itself nearly or fully stationary anyway
+ * - can't blow the ramp up to an absurdly long (or divide-by-zero) duration.
+ */
+const MIN_SWEEP_SPEED_FOR_TRANSITION = 0.05;
+
+/**
  * Owns the single shadow-casting light plus an ambient fill light, and
  * drives its movement from either the pointer (mouse/pen) or, on
  * touch/no-pointer devices, a continuous organic drift (layered sine waves
@@ -73,6 +93,8 @@ export class LightRig {
   private sweepPhaseY = Math.random() * TWO_PI;
   /** Seconds since the last real pointer movement while locked onto it in "auto" mode - see AUTO_IDLE_RESUME_SECONDS. */
   private idleSeconds = 0;
+  /** Seconds elapsed since the last pointer<->auto-sweep switch; starts at Infinity (no ramp pending) - see setUsingPointer() and modeTransitionSeconds(). */
+  private transitionElapsed = Infinity;
   private reach = 4.5;
   private lightDistance = 7;
   /** "sun" light's/"cursor" light's shadow frustum half-extents, in world units - set by setShadowBounds(). */
@@ -147,8 +169,8 @@ export class LightRig {
       this.scene.add(this._key, this._key.target);
     }
     this.config = config;
-    if (config.mode === "sweep") this.usingPointer = false;
-    if (config.mode === "pointer") this.usingPointer = true;
+    if (config.mode === "sweep") this.setUsingPointer(false);
+    if (config.mode === "pointer") this.setUsingPointer(true);
     this.applyStyle();
     // Re-derive shadow bounds (cursor cone angle/height clamp, sun's far
     // plane) from the new config right away, using the last-known viewport
@@ -249,6 +271,38 @@ export class LightRig {
     this.ambient.intensity = Math.max(0, this.config.ambient + preset.ambientBoost);
   }
 
+  /**
+   * Switches between "following the pointer" and "auto-sweeping" (a no-op if
+   * `next` matches the current state). Restarts the onset ramp, so update()
+   * eases `current`'s catch-up speed back up from a standstill over
+   * modeTransitionSeconds() instead of resuming at full pace the instant the
+   * source switches - see update()'s use of this ramp, and the per-frame
+   * speed cap it feeds into for the "resuming the sweep" direction
+   * specifically.
+   */
+  private setUsingPointer(next: boolean) {
+    if (next !== this.usingPointer) {
+      this.transitionElapsed = 0;
+    }
+    this.usingPointer = next;
+  }
+
+  /**
+   * How long the post-switch onset ramp (see setUsingPointer() and its use
+   * in update()) takes to bring the catch-up speed up from a standstill,
+   * scaled inversely by `sweepSpeed` so the onset itself stays proportionate
+   * to the auto-sweep's own pace: a faster-configured sweep can ramp up to
+   * speed quickly without that reading as a snap, a slower, lazier one
+   * warrants a gentler, longer runway. This only shapes the first instant of
+   * a switch - the actual guarantee that `current` never outruns the
+   * sweep's cruising pace while resuming it comes from the per-frame
+   * `sweepStepDistance` cap in update(), which holds for as long as it
+   * takes to close the gap, however large.
+   */
+  private modeTransitionSeconds(): number {
+    return BASE_MODE_TRANSITION_SECONDS / Math.max(MIN_SWEEP_SPEED_FOR_TRANSITION, Math.abs(this.config.sweepSpeed));
+  }
+
   private handleWindowPointerMove(e: PointerEvent) {
     if (this.config.mode === "sweep") return;
 
@@ -264,13 +318,13 @@ export class LightRig {
       // Pinned to pointer-follow: keep tracking the pointer everywhere on
       // the page, not just while it happens to sit over the container -
       // "never fall back to sweeping" per the mode's contract.
-      this.usingPointer = true;
+      this.setUsingPointer(true);
     } else if (inside) {
-      this.usingPointer = true;
+      this.setUsingPointer(true);
     } else {
       // mode "auto", pointer outside the container - drop back to the
       // automatic sweep rather than freezing the light at its last spot.
-      this.usingPointer = false;
+      this.setUsingPointer(false);
       return;
     }
 
@@ -294,7 +348,7 @@ export class LightRig {
     // automatic sweep rather than freezing the light at its last spot,
     // unless mode "pointer" pins it in place regardless.
     if (this.config.mode === "pointer") return;
-    this.usingPointer = false;
+    this.setUsingPointer(false);
   }
 
   /** Advances the auto-sweep (if active) and eases the light toward its target. Call once per frame. */
@@ -305,17 +359,22 @@ export class LightRig {
       this.idleSeconds += deltaSeconds;
       if (this.idleSeconds >= AUTO_IDLE_RESUME_SECONDS) {
         // The pointer hasn't moved in a while - drop back to the automatic
-        // sweep rather than leaving the light frozen in place. The lerp
-        // below eases `current` toward `target` regardless of why `target`
-        // changed, so switching back never produces a visible jump - and
-        // `sweepTime` (below) was never reset, so the sweep itself picks
-        // back up exactly where it would have been, not from a fresh start.
-        this.usingPointer = false;
+        // sweep rather than leaving the light frozen in place. The crossfade
+        // below eases `target` toward wherever the sweep is now, so
+        // switching back never produces a visible jump - and `sweepTime`
+        // (below) was never reset, so the sweep itself picks back up
+        // exactly where it would have been, not from a fresh start.
+        this.setUsingPointer(false);
       }
     }
 
+    // How far the sweep's own formula moves this frame, at the *current*
+    // sweepTime vs. where it was a frame ago - a live measure of "the
+    // auto-sweep's own natural pace" that setUsingPointer() below caps
+    // `current`'s catch-up speed to, when resuming the sweep after a
+    // pointer-follow switch. 0 while the pointer is driving things instead.
+    let sweepStepDistance = 0;
     if (!this.usingPointer && this.config.autoSweepOnTouch) {
-      this.sweepTime += deltaSeconds * this.config.sweepSpeed;
       // For "cursor", roam over the actual visible grid extent instead of
       // the sun's reach-scaled angular swing, so the wandering point
       // visibly crosses the grid rather than just changing angle.
@@ -325,22 +384,52 @@ export class LightRig {
       const reachY = isCursor
         ? this.halfHeightUnits * CURSOR_SWEEP_FRACTION * this.config.intensity
         : this.reach * this.config.intensity * 0.7;
-      const x =
-        (Math.sin(this.sweepTime * SWEEP_X_FREQ_1 + this.sweepPhaseX) * 0.6 +
-          Math.sin(this.sweepTime * SWEEP_X_FREQ_2 + this.sweepPhaseX * 1.7) * 0.4) *
+      const sweepX = (t: number) =>
+        (Math.sin(t * SWEEP_X_FREQ_1 + this.sweepPhaseX) * 0.6 + Math.sin(t * SWEEP_X_FREQ_2 + this.sweepPhaseX * 1.7) * 0.4) *
         reachX;
-      const y =
-        (Math.sin(this.sweepTime * SWEEP_Y_FREQ_1 + this.sweepPhaseY) * 0.6 +
-          Math.sin(this.sweepTime * SWEEP_Y_FREQ_2 + this.sweepPhaseY * 1.7) * 0.4) *
+      const sweepY = (t: number) =>
+        (Math.sin(t * SWEEP_Y_FREQ_1 + this.sweepPhaseY) * 0.6 + Math.sin(t * SWEEP_Y_FREQ_2 + this.sweepPhaseY * 1.7) * 0.4) *
         reachY;
+
+      const prevSweepTime = this.sweepTime;
+      this.sweepTime += deltaSeconds * this.config.sweepSpeed;
+      const x = sweepX(this.sweepTime);
+      const y = sweepY(this.sweepTime);
+      sweepStepDistance = Math.hypot(x - sweepX(prevSweepTime), y - sweepY(prevSweepTime));
       this.target.set(x, y);
     }
 
-    // Ease toward the target for a smooth, physical-feeling motion. Since
-    // the auto-sweep target above is itself always in motion, this never
-    // lets `current` fully catch up and sit still - it's continuously
-    // chasing a moving point rather than converging on a fixed one.
-    this.current.lerp(this.target, Math.min(1, deltaSeconds * this.config.easing));
+    // Ramp 0 -> 1 over modeTransitionSeconds() after a pointer<->auto-sweep
+    // switch (see setUsingPointer()) - used below to ease the catch-up in
+    // from a standstill rather than resuming at full pace the instant the
+    // source switches.
+    const transitionDuration = this.modeTransitionSeconds();
+    this.transitionElapsed = Math.min(transitionDuration, this.transitionElapsed + deltaSeconds);
+    const t = this.transitionElapsed / transitionDuration;
+    const rampScale = t * t * (3 - 2 * t); // smoothstep
+
+    const alpha = Math.min(1, deltaSeconds * this.config.easing * rampScale);
+    if (!this.usingPointer && this.config.autoSweepOnTouch) {
+      // Resuming the sweep: `target` may have jumped an arbitrary distance
+      // (the sweep's own clock kept ticking while the pointer was being
+      // followed, so it can be far from wherever the pointer left off), and
+      // closing that gap at the normal rate right away would show up as a
+      // burst of speed well above the sweep's own cruising pace before
+      // settling back down to it - "a fast move to a point, then normal
+      // speed." Capping the step at the sweep's own current pace instead
+      // (ramped in, per above) means `current` never outruns it - a bigger
+      // gap just takes longer to close, rather than being sprinted through.
+      const dx = (this.target.x - this.current.x) * alpha;
+      const dy = (this.target.y - this.current.y) * alpha;
+      const stepLength = Math.hypot(dx, dy);
+      const maxStep = sweepStepDistance * rampScale;
+      const scale = stepLength > maxStep && stepLength > 0 ? maxStep / stepLength : 1;
+      this.current.x += dx * scale;
+      this.current.y += dy * scale;
+    } else {
+      // Ease toward the target for a smooth, physical-feeling motion.
+      this.current.lerp(this.target, alpha);
+    }
 
     if (isCursor) {
       this._key.position.set(this.current.x, this.current.y, this.cursorHeightWorld);
