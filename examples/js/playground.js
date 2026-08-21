@@ -139,7 +139,7 @@ document.getElementById("json-save-btn").addEventListener("click", () => {
   try {
     parsed = JSON.parse(configJson.value);
   } catch (err) {
-    statusEl.textContent = `Invalid JSON — ${err.message}`;
+    statusEl.textContent = `Invalid JSON: ${err.message}`;
     statusEl.classList.add("error");
     return;
   }
