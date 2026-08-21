@@ -258,3 +258,7 @@ To try the interactive demo locally instead of the [hosted version](https://fabi
 ## License
 
 MIT
+
+---
+
+Made with ❤️ by Fabio
