@@ -261,4 +261,4 @@ MIT
 
 ---
 
-Made with ❤️ by Fabio
+Made with ❤️ by [Fabio](https://github.com/FabioGA)
