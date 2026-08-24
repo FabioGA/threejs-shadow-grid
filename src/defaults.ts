@@ -36,7 +36,16 @@ export const OBJECT_MATERIAL_ROUGHNESS_SOFT = 0.9;
 export const OBJECT_MATERIAL_ROUGHNESS_HARD = 0.15;
 export const OBJECT_MATERIAL_METALNESS_SOFT = 0;
 export const OBJECT_MATERIAL_METALNESS_HARD = 0.6;
-export const OBJECT_MATERIAL_CLEARCOAT_SOFT = 0.4;
+/**
+ * Exactly 0, not just "low": three.js only compiles/runs the clearcoat
+ * shader path (an extra BRDF lobe evaluated per-fragment, per-light) when
+ * `material.clearcoat > 0` - any nonzero value pays the same shader cost
+ * regardless of magnitude, so a small-but-nonzero soft-end value would
+ * look softer with no perf benefit at all. At the default `hardness: 0`,
+ * this also means clearcoat costs nothing more than plain
+ * MeshStandardMaterial would, with no need for a material-class swap.
+ */
+export const OBJECT_MATERIAL_CLEARCOAT_SOFT = 0;
 export const OBJECT_MATERIAL_CLEARCOAT_HARD = 0.9;
 export const OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_SOFT = 0.35;
 export const OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_HARD = 0.05;

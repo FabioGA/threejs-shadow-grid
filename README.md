@@ -240,6 +240,7 @@ Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thin
 - Antialiasing is skipped automatically once the effective pixel ratio (`devicePixelRatio` capped by `maxPixelRatio`) reaches 2x or higher - at that point the framebuffer is already supersampled enough that MSAA's extra cost buys little, so it's kept only where it's actually needed (1x displays).
 - Rendering pauses automatically when the tab is backgrounded or the container scrolls out of view (`document.visibilitychange` + `IntersectionObserver`) - nothing is spent on a frame nobody can see.
 - A container resize recalculates cheap viewport metrics (canvas size, camera frustum, shadow bounds) immediately, but only rebuilds the (potentially large) instance grid after resizing settles for ~120ms - a drag-resize or CSS transition doesn't rebuild every instance on every intermediate frame.
+- At the default `hardness: 0` (soft matte rubber), the clearcoat lobe on the object material is exactly `0`, not just low - three.js only evaluates the clearcoat shader path at all once `clearcoat > 0`, so this skips that extra per-fragment cost entirely rather than merely reducing it. Raising `hardness` re-enables clearcoat at the cost that implies.
 
 #### Benchmarking
 
