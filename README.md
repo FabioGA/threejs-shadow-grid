@@ -238,6 +238,8 @@ Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thin
 - Shadows use a single shadow-casting light (the "sun" or the "cursor" spotlight) with one shadow map - never a light per object - which is what makes this affordable even with a large grid.
 - The shadow filter follows `light.style`: `"soft"` uses `PCFSoftShadowMap` (its wider blur is worth the extra cost at that style's already-soft `shadow.radius`); `"medium"`/`"hard"` use the cheaper `PCFShadowMap`, since at their tighter radius the two look effectively the same.
 - Antialiasing is skipped automatically once the effective pixel ratio (`devicePixelRatio` capped by `maxPixelRatio`) reaches 2x or higher - at that point the framebuffer is already supersampled enough that MSAA's extra cost buys little, so it's kept only where it's actually needed (1x displays).
+- Rendering pauses automatically when the tab is backgrounded or the container scrolls out of view (`document.visibilitychange` + `IntersectionObserver`) - nothing is spent on a frame nobody can see.
+- A container resize recalculates cheap viewport metrics (canvas size, camera frustum, shadow bounds) immediately, but only rebuilds the (potentially large) instance grid after resizing settles for ~120ms - a drag-resize or CSS transition doesn't rebuild every instance on every intermediate frame.
 
 #### Benchmarking
 

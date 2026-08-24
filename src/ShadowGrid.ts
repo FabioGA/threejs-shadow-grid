@@ -3,7 +3,7 @@ import { maxObjectSize, resolveConfig } from "./resolveConfig";
 import { loadModels } from "./loaders";
 import { GridBuilder } from "./grid";
 import { LightRig } from "./light";
-import { PIXELS_PER_UNIT } from "./defaults";
+import { PIXELS_PER_UNIT, RESIZE_REBUILD_DEBOUNCE_MS } from "./defaults";
 import type { GridConfig, ResolvedGridConfig } from "./types";
 
 /**
@@ -24,6 +24,8 @@ export class ShadowGrid {
   private lightRig: LightRig;
   private backdrop: THREE.Mesh | null = null;
   private resizeObserver: ResizeObserver;
+  private intersectionObserver: IntersectionObserver;
+  private resizeRebuildTimer: ReturnType<typeof setTimeout> | null = null;
   private rafId: number | null = null;
   private lastTime = 0;
   private viewportWidthUnits = 1;
@@ -31,6 +33,12 @@ export class ShadowGrid {
   private destroyed = false;
   private loadToken = 0;
   private containerPrevPosition: string | null = null;
+  // The render loop only runs while both are true - no reason to spend GPU
+  // time on a backgrounded tab or a container scrolled out of view, since
+  // neither is visible to anyone anyway.
+  private documentVisible = !document.hidden;
+  private containerIntersecting = true;
+  private onDocumentVisibilityChange = () => this.setDocumentVisible(!document.hidden);
 
   constructor(config: GridConfig) {
     this.config = resolveConfig(config);
@@ -81,8 +89,12 @@ export class ShadowGrid {
     this.backdrop.position.z = -1;
     this.scene.add(this.backdrop);
 
-    this.resizeObserver = new ResizeObserver(() => this.handleResize());
+    this.resizeObserver = new ResizeObserver(() => this.handleResizeObserved());
     this.resizeObserver.observe(this.container);
+
+    this.intersectionObserver = new IntersectionObserver(([entry]) => this.setIntersecting(entry.isIntersecting));
+    this.intersectionObserver.observe(this.container);
+    document.addEventListener("visibilitychange", this.onDocumentVisibilityChange);
 
     this.handleResize();
     this.loadAndBuild();
@@ -127,7 +139,8 @@ export class ShadowGrid {
     return this.config.light.style === "soft" ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   }
 
-  private handleResize() {
+  /** Cheap viewport recalculation only - canvas size, camera frustum, shadow bounds, backdrop scale. No grid rebuild. */
+  private applyViewportMetrics() {
     const width = Math.max(1, this.container.clientWidth);
     const height = Math.max(1, this.container.clientHeight);
 
@@ -152,8 +165,28 @@ export class ShadowGrid {
     if (this.backdrop) {
       this.backdrop.scale.set(this.viewportWidthUnits + 2, this.viewportHeightUnits + 2, 1);
     }
+  }
 
+  /** Immediate: used for the initial mount and update() (a discrete config change, not an interactive-resize storm). */
+  private handleResize() {
+    this.applyViewportMetrics();
     this.rebuildGrid();
+  }
+
+  /**
+   * ResizeObserver callback: viewport metrics update immediately on every
+   * callback (cheap), but the expensive full grid rebuild is debounced so a
+   * drag-resize or CSS transition doesn't rebuild every InstancedMesh on
+   * every intermediate frame - `overscan` already covers the small resulting
+   * edge gap while a rebuild is pending.
+   */
+  private handleResizeObserved() {
+    this.applyViewportMetrics();
+    if (this.resizeRebuildTimer !== null) clearTimeout(this.resizeRebuildTimer);
+    this.resizeRebuildTimer = setTimeout(() => {
+      this.resizeRebuildTimer = null;
+      this.rebuildGrid();
+    }, RESIZE_REBUILD_DEBOUNCE_MS);
   }
 
   private rebuildGrid() {
@@ -194,6 +227,28 @@ export class ShadowGrid {
       this.rafId = requestAnimationFrame(tick);
     };
     this.rafId = requestAnimationFrame(tick);
+  }
+
+  private setDocumentVisible(visible: boolean) {
+    this.documentVisible = visible;
+    this.syncLoopRunning();
+  }
+
+  private setIntersecting(intersecting: boolean) {
+    this.containerIntersecting = intersecting;
+    this.syncLoopRunning();
+  }
+
+  /** Starts/stops the render loop to match document visibility + container intersection - nothing to render, nothing to pay for. */
+  private syncLoopRunning() {
+    if (this.destroyed) return;
+    const shouldRun = this.documentVisible && this.containerIntersecting;
+    if (shouldRun && this.rafId === null) {
+      this.startLoop();
+    } else if (!shouldRun && this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 
   /** Partially updates the configuration. Reloads models only if `models`/`objectSize` changed. */
@@ -243,7 +298,10 @@ export class ShadowGrid {
     if (this.destroyed) return;
     this.destroyed = true;
     if (this.rafId !== null) cancelAnimationFrame(this.rafId);
+    if (this.resizeRebuildTimer !== null) clearTimeout(this.resizeRebuildTimer);
     this.resizeObserver.disconnect();
+    this.intersectionObserver.disconnect();
+    document.removeEventListener("visibilitychange", this.onDocumentVisibilityChange);
     this.lightRig.dispose();
     this.gridBuilder.dispose();
     if (this.backdrop) {

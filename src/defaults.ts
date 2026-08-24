@@ -20,6 +20,15 @@ export const DEFAULT_SEED = 1337;
 export const DEFAULT_MAX_PIXEL_RATIO = 2;
 export const DEFAULT_SHADOWS = true;
 
+/**
+ * How long a ResizeObserver callback waits for resizing to settle before
+ * rebuilding the (potentially large) InstancedMesh grid - cheap viewport
+ * metrics (canvas size, camera frustum, shadow bounds) still update on
+ * every callback; only the expensive rebuild is debounced. `overscan`
+ * covers the small edge gap while a rebuild is pending.
+ */
+export const RESIZE_REBUILD_DEBOUNCE_MS = 120;
+
 export const DEFAULT_HARDNESS = 0;
 
 /** Rubber-like-to-glossy material tuning: `hardness` (see GridConfig) lerps roughness/metalness/clearcoat between these endpoints. */
