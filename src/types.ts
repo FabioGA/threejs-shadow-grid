@@ -50,7 +50,7 @@ export interface LightConfig {
   sweepSpeed?: number;
   /** Ambient fill light amount (0-1) so shadowed faces aren't pure black. Default: 0.45. */
   ambient?: number;
-  /** How quickly the light eases toward its target (pointer or sweep waypoint). Higher = snappier. Default: 4. */
+  /** How quickly the light eases toward its target (pointer or sweep waypoint). Higher = snappier. Default: 8. */
   easing?: number;
   /** CSS color for the key ("sun") light - tints both the light and the shadows it casts. Default: "#ffffff". */
   color?: string;

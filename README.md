@@ -206,7 +206,7 @@ light: {
   autoSweepOnTouch: true,  // auto-drift when there's no pointer activity - default true
   sweepSpeed: 1,         // speed multiplier for that drift (higher = faster, more frequent waypoint changes) - default 1
   ambient: 0.45,          // ambient fill light (0-1) so shadows aren't pure black - default 0.45
-  easing: 4,              // how quickly the light eases toward the pointer/sweep target - higher = snappier - default 4
+  easing: 8,              // how quickly the light eases toward the pointer/sweep target - higher = snappier - default 8
   color: "#ffffff",       // tints the light and the shadows it casts - default "#ffffff"
   hardness: 0.5,          // 0 (very soft) - 1 (very crisp) shadow edge; overrides the softness `style` implies - default depends on `style`
   shadowMapSize: 1536,    // 256-4096 texels per side; higher = crisper, less pixelated shadow edges - default depends on `style`
