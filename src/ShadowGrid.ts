@@ -3,7 +3,16 @@ import { maxObjectSize, resolveConfig } from "./resolveConfig";
 import { loadModels } from "./loaders";
 import { GridBuilder } from "./grid";
 import { LightRig } from "./light";
-import { PIXELS_PER_UNIT, RESIZE_REBUILD_DEBOUNCE_MS } from "./defaults";
+import {
+  ADAPTIVE_PIXEL_RATIO_CHECK_INTERVAL_MS,
+  ADAPTIVE_PIXEL_RATIO_EMA_ALPHA,
+  ADAPTIVE_PIXEL_RATIO_FRAME_MS_STEP_DOWN,
+  ADAPTIVE_PIXEL_RATIO_FRAME_MS_STEP_UP,
+  ADAPTIVE_PIXEL_RATIO_MIN,
+  ADAPTIVE_PIXEL_RATIO_STEP,
+  PIXELS_PER_UNIT,
+  RESIZE_REBUILD_DEBOUNCE_MS,
+} from "./defaults";
 import type { GridConfig, ResolvedGridConfig } from "./types";
 
 /**
@@ -39,10 +48,18 @@ export class ShadowGrid {
   private documentVisible = !document.hidden;
   private containerIntersecting = true;
   private onDocumentVisibilityChange = () => this.setDocumentVisible(!document.hidden);
+  // Adaptive pixel ratio: the ratio actually applied to the renderer right
+  // now, which can sit below `naturalPixelRatio()` (the maxPixelRatio-capped
+  // devicePixelRatio ceiling) when frame time has been under pressure - see
+  // updateAdaptivePixelRatio(). Set for real once `this.config` exists.
+  private currentPixelRatio = 1;
+  private frameTimeEma: number | null = null;
+  private lastAdaptiveCheckTime = 0;
 
   constructor(config: GridConfig) {
     this.config = resolveConfig(config);
     this.container = this.config.container;
+    this.currentPixelRatio = this.naturalPixelRatio();
 
     this.applyContainerStyles();
 
@@ -58,7 +75,7 @@ export class ShadowGrid {
       // `antialias` is a WebGL-context-creation-time option, so it's fixed
       // from the initial (capped) pixel ratio and can't react to a later
       // `maxPixelRatio` change via update().
-      antialias: this.effectivePixelRatio() < 2,
+      antialias: this.naturalPixelRatio() < 2,
       alpha: this.config.backgroundColor === "transparent",
       powerPreference: "high-performance",
     });
@@ -124,7 +141,8 @@ export class ShadowGrid {
     } as Partial<CSSStyleDeclaration>);
   }
 
-  private effectivePixelRatio(): number {
+  /** The maxPixelRatio-capped devicePixelRatio ceiling - not necessarily what's currently applied, see currentPixelRatio. */
+  private naturalPixelRatio(): number {
     return Math.min(window.devicePixelRatio || 1, this.config.maxPixelRatio);
   }
 
@@ -144,7 +162,13 @@ export class ShadowGrid {
     const width = Math.max(1, this.container.clientWidth);
     const height = Math.max(1, this.container.clientHeight);
 
-    this.renderer.setPixelRatio(this.effectivePixelRatio());
+    // Adaptive mode preserves any existing step-down across a resize (only
+    // re-clamping to a ceiling that may itself have changed); non-adaptive
+    // always snaps straight to the natural ceiling.
+    this.currentPixelRatio = this.config.adaptivePixelRatio
+      ? Math.min(this.currentPixelRatio, this.naturalPixelRatio())
+      : this.naturalPixelRatio();
+    this.renderer.setPixelRatio(this.currentPixelRatio);
     this.renderer.setSize(width, height, false);
 
     const halfWidthUnits = width / 2 / PIXELS_PER_UNIT;
@@ -220,13 +244,52 @@ export class ShadowGrid {
     this.lastTime = performance.now();
     const tick = (now: number) => {
       if (this.destroyed) return;
-      const delta = Math.min(0.1, (now - this.lastTime) / 1000);
+      // Raw (unclamped) delta doubles as the frame-time signal for adaptive
+      // pixel ratio - `delta` below is clamped for animation smoothing only
+      // (avoids a huge easing jump after a real gap), which would hide the
+      // very slowness the adaptive check needs to see.
+      const rawDeltaSeconds = (now - this.lastTime) / 1000;
+      const delta = Math.min(0.1, rawDeltaSeconds);
       this.lastTime = now;
       this.lightRig.update(delta);
       this.renderer.render(this.scene, this.camera);
+      this.updateAdaptivePixelRatio(now, rawDeltaSeconds);
       this.rafId = requestAnimationFrame(tick);
     };
     this.rafId = requestAnimationFrame(tick);
+  }
+
+  /**
+   * Steps `currentPixelRatio` down under sustained frame-time pressure, and
+   * back up toward `naturalPixelRatio()` once there's headroom - see the
+   * ADAPTIVE_PIXEL_RATIO_* constants for the thresholds/hysteresis. Checked
+   * at most once per ADAPTIVE_PIXEL_RATIO_CHECK_INTERVAL_MS so a single slow
+   * frame (GC pause, tab-switch hiccup) can't trigger a step on its own -
+   * only a sustained trend the EMA actually reflects.
+   */
+  private updateAdaptivePixelRatio(now: number, rawDeltaSeconds: number) {
+    if (!this.config.adaptivePixelRatio) return;
+
+    const frameMs = rawDeltaSeconds * 1000;
+    this.frameTimeEma =
+      this.frameTimeEma === null
+        ? frameMs
+        : this.frameTimeEma + (frameMs - this.frameTimeEma) * ADAPTIVE_PIXEL_RATIO_EMA_ALPHA;
+
+    if (now - this.lastAdaptiveCheckTime < ADAPTIVE_PIXEL_RATIO_CHECK_INTERVAL_MS) return;
+    this.lastAdaptiveCheckTime = now;
+
+    const ceiling = this.naturalPixelRatio();
+    if (
+      this.frameTimeEma > ADAPTIVE_PIXEL_RATIO_FRAME_MS_STEP_DOWN &&
+      this.currentPixelRatio > ADAPTIVE_PIXEL_RATIO_MIN
+    ) {
+      this.currentPixelRatio = Math.max(ADAPTIVE_PIXEL_RATIO_MIN, this.currentPixelRatio - ADAPTIVE_PIXEL_RATIO_STEP);
+      this.renderer.setPixelRatio(this.currentPixelRatio);
+    } else if (this.frameTimeEma < ADAPTIVE_PIXEL_RATIO_FRAME_MS_STEP_UP && this.currentPixelRatio < ceiling) {
+      this.currentPixelRatio = Math.min(ceiling, this.currentPixelRatio + ADAPTIVE_PIXEL_RATIO_STEP);
+      this.renderer.setPixelRatio(this.currentPixelRatio);
+    }
   }
 
   private setDocumentVisible(visible: boolean) {

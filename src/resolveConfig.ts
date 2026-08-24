@@ -9,6 +9,7 @@ import type {
   WeightedModel,
 } from "./types";
 import {
+  DEFAULT_ADAPTIVE_PIXEL_RATIO,
   DEFAULT_ARRANGEMENT,
   DEFAULT_BACKGROUND_COLOR,
   DEFAULT_CELL_SIZE,
@@ -118,6 +119,7 @@ export function resolveConfig(config: GridConfig): ResolvedGridConfig {
     light: resolveLight(config.light),
     maxPixelRatio: config.maxPixelRatio ?? DEFAULT_MAX_PIXEL_RATIO,
     shadows: config.shadows ?? DEFAULT_SHADOWS,
+    adaptivePixelRatio: config.adaptivePixelRatio ?? DEFAULT_ADAPTIVE_PIXEL_RATIO,
   };
 
   return resolved;

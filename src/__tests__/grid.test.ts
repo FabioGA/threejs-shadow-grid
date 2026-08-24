@@ -25,6 +25,7 @@ function buildConfig(overrides: Partial<ResolvedGridConfig> = {}): ResolvedGridC
     light: DEFAULT_LIGHT,
     maxPixelRatio: 2,
     shadows: true,
+    adaptivePixelRatio: true,
     ...overrides,
   };
 }

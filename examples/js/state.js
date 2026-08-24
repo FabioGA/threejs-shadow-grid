@@ -33,6 +33,7 @@ export const defaultState = {
   hardness: 0.25,
   shadows: true,
   maxPixelRatio: 2,
+  adaptivePixelRatio: true,
   seed: 1337,
   lightType: "sun",
   cursorHeight: 1180,

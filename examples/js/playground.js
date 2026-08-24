@@ -68,6 +68,7 @@ bindCheckbox("matchBackground", "matchBackground");
 bindRange("hardness", "hardness", (v) => v.toFixed(2));
 bindCheckbox("shadows", "shadows");
 bindRange("maxPixelRatio", "maxPixelRatio", (v) => v.toFixed(1));
+bindCheckbox("adaptivePixelRatio", "adaptivePixelRatio");
 
 bindSelect("lightType", "lightType", (v) =>
   document.getElementById("lightType-cursor-group").classList.toggle("active", v === "cursor")

@@ -165,6 +165,7 @@ Mounts into `config.container`, fills it completely (via `ResizeObserver`), and 
 | `light` | `LightStyle \| LightConfig` | `"medium"` | See [Light](#light) below. |
 | `maxPixelRatio` | `number` | `2` | Caps `devicePixelRatio` for performance on high-DPI screens. |
 | `shadows` | `boolean` | `true` | Turn off to skip shadow-map rendering entirely (cheaper, flatter look). |
+| `adaptivePixelRatio` | `boolean` | `true` | Automatically lowers the live pixel ratio (down to 1x) under sustained frame-time pressure, and raises it back toward `maxPixelRatio` once there's headroom. A no-op on hardware that never struggles. Turn off for a fixed pixel ratio (e.g. deterministic screenshots). |
 
 ### Weighted palettes
 
@@ -241,6 +242,7 @@ Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thin
 - Rendering pauses automatically when the tab is backgrounded or the container scrolls out of view (`document.visibilitychange` + `IntersectionObserver`) - nothing is spent on a frame nobody can see.
 - A container resize recalculates cheap viewport metrics (canvas size, camera frustum, shadow bounds) immediately, but only rebuilds the (potentially large) instance grid after resizing settles for ~120ms - a drag-resize or CSS transition doesn't rebuild every instance on every intermediate frame.
 - At the default `hardness: 0` (soft matte rubber), the clearcoat lobe on the object material is exactly `0`, not just low - three.js only evaluates the clearcoat shader path at all once `clearcoat > 0`, so this skips that extra per-fragment cost entirely rather than merely reducing it. Raising `hardness` re-enables clearcoat at the cost that implies.
+- `adaptivePixelRatio` (default on) watches an EMA of frame time and steps the live pixel ratio down (floor 1x) if frames run slow for a sustained stretch, then back up toward `maxPixelRatio` once there's headroom again - a no-op on hardware that never struggles, since it only ever reacts to real, sustained frame-budget pressure.
 
 #### Benchmarking
 
