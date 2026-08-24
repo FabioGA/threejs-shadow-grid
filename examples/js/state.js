@@ -45,7 +45,13 @@ export const defaultState = {
   easing: 3.5,
   lightColor: "#f1a010",
   lightHardness: 0.25,
-  shadowMapSize: 4096,
+  // Matches the library's own default for `lightStyle: "soft"` (see
+  // LIGHT_STYLE_PRESETS in src/defaults.ts) - the demo's control always
+  // passes shadowMapSize explicitly (see config-transform.js), so it
+  // doesn't inherit that preset default on its own; this keeps the demo's
+  // out-of-the-box shadow cost representative of what a real consumer
+  // ships instead of defaulting to the slider's max.
+  shadowMapSize: 1024,
 };
 
 export const state = {

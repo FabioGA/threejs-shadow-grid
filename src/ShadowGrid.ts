@@ -44,12 +44,18 @@ export class ShadowGrid {
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
-      antialias: true,
+      // MSAA is most valuable at 1x device pixels, where hard instance
+      // edges alias visibly; at >=2x effective pixel ratio the framebuffer
+      // is already supersampled enough that MSAA's extra cost buys little.
+      // `antialias` is a WebGL-context-creation-time option, so it's fixed
+      // from the initial (capped) pixel ratio and can't react to a later
+      // `maxPixelRatio` change via update().
+      antialias: this.effectivePixelRatio() < 2,
       alpha: this.config.backgroundColor === "transparent",
       powerPreference: "high-performance",
     });
     this.renderer.shadowMap.enabled = this.config.shadows;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = this.shadowMapType();
     this.renderer.setClearColor(0x000000, 0);
 
     this.scene = new THREE.Scene();
@@ -106,11 +112,26 @@ export class ShadowGrid {
     } as Partial<CSSStyleDeclaration>);
   }
 
+  private effectivePixelRatio(): number {
+    return Math.min(window.devicePixelRatio || 1, this.config.maxPixelRatio);
+  }
+
+  /**
+   * `PCFSoftShadowMap`'s wider multi-tap blur is worth its extra per-fragment
+   * cost mainly at "soft" style, where `shadow.radius` is already near its
+   * max and needs the smoother filter to avoid banding; "medium"/"hard" sit
+   * closer to `MIN_SHADOW_RADIUS`, where the cheaper `PCFShadowMap` filter
+   * looks effectively the same.
+   */
+  private shadowMapType(): THREE.ShadowMapType {
+    return this.config.light.style === "soft" ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+  }
+
   private handleResize() {
     const width = Math.max(1, this.container.clientWidth);
     const height = Math.max(1, this.container.clientHeight);
 
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.config.maxPixelRatio));
+    this.renderer.setPixelRatio(this.effectivePixelRatio());
     this.renderer.setSize(width, height, false);
 
     const halfWidthUnits = width / 2 / PIXELS_PER_UNIT;
@@ -208,6 +229,7 @@ export class ShadowGrid {
 
     this.lightRig.updateConfig(this.config.light);
     this.renderer.shadowMap.enabled = this.config.shadows;
+    this.renderer.shadowMap.type = this.shadowMapType();
 
     if (modelsChanged) {
       this.loadAndBuild();
