@@ -575,6 +575,20 @@ pre#code-output {
 }
 .panel-footer {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-top: 10px;
+}
+.panel-footer-hint {
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+.panel-footer-hint kbd {
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
 }

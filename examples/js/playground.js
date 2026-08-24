@@ -15,6 +15,7 @@ import {
 import { models } from "./models.js";
 import { randomGridConfig } from "./random.js";
 import "./feature-toggle.js";
+import "./perf-overlay.js";
 import { bg, codeOutput, configJson, scheduleApply, syncConfigJson } from "./render.js";
 import "./section-nav.js";
 import { defaultState, state } from "./state.js";
