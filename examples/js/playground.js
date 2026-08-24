@@ -44,7 +44,9 @@ bindRange("rowOffset", "rowOffset", (v) => v.toFixed(2));
   bindRange(`rotation${axis}Deg`, `rotation${axis}Deg`, (v) => `${v}°`);
 });
 ["modelWeight0", "modelWeight1", "modelWeight2"].forEach((id, i) => {
-  document.getElementById(id).addEventListener("input", (e) => {
+  const input = document.getElementById(id);
+  input.value = state.modelWeights[i];
+  input.addEventListener("input", (e) => {
     const value = Number(e.target.value);
     if (Number.isNaN(value)) return;
     state.modelWeights[i] = value;
