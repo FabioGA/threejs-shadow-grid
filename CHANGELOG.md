@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `maxInstances` now defaults to `"auto"`, sizing the grid to exactly what the container needs (rows x columns it fits, plus `overscan`) instead of a flat `4000` cap - which could under-fill a large container with a small `cellSize` (a visible gap) or hold onto unused headroom on a small one. Pass a number for the previous explicit-hard-cap behavior.
+
 ## [1.2.0] - 2026-08-24
 
 ### Added

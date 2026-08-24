@@ -157,8 +157,17 @@
                 <span class="val" id="overscan-val">0.15</span>
               </div>
               <div class="field">
-                <label for="maxInstances">maxInstances</label>
-                <input type="number" id="maxInstances" min="1" max="20000" step="100" value="4000" />
+                <label for="maxInstancesMode">maxInstances</label>
+                <select id="maxInstancesMode">
+                  <option value="auto" selected>auto (fill container)</option>
+                  <option value="fixed">fixed</option>
+                </select>
+              </div>
+              <div class="subgroup" id="maxInstances-fixed-group">
+                <div class="field">
+                  <label for="maxInstances">cap</label>
+                  <input type="number" id="maxInstances" min="1" max="20000" step="100" value="4000" />
+                </div>
               </div>
               <div class="field">
                 <label for="seed">seed</label>

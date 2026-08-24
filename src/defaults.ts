@@ -12,7 +12,15 @@ export const DEFAULT_JITTER = 0.4;
 export const DEFAULT_ROW_OFFSET = 0;
 export const DEFAULT_ROTATION = 0;
 export const DEFAULT_OVERSCAN = 0.15;
-export const DEFAULT_MAX_INSTANCES = 4000;
+export const DEFAULT_MAX_INSTANCES = "auto" as const;
+/**
+ * The cap `maxInstances: "auto"` resolves to - not a target, just a last-resort
+ * guard against a degenerate config (e.g. a tiny `cellSize` on a huge
+ * container) generating an excessive instance count. Ordinary containers
+ * never get close to this; the real limit in "auto" mode is however many
+ * cells `cellSize` fits into the container (see `GridBuilder.rebuild`).
+ */
+export const MAX_INSTANCES_SAFETY_CEILING = 20000;
 export const DEFAULT_BACKGROUND_COLOR = "#0a0a0f";
 export const DEFAULT_COLORS = "#c9ccd6";
 export const DEFAULT_MATCH_BACKGROUND = false;

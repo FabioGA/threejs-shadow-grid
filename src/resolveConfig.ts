@@ -28,6 +28,7 @@ import {
   DEFAULT_SHADOWS,
   LIGHT_STYLE_PRESETS,
   MAX_CURSOR_HEIGHT,
+  MAX_INSTANCES_SAFETY_CEILING,
   MAX_SHADOW_MAP_SIZE,
   MIN_CURSOR_HEIGHT,
   MIN_SHADOW_MAP_SIZE,
@@ -64,6 +65,12 @@ function resolveRotation(rotation: RotationConfig | undefined): ResolvedRotation
     return { x: 0, y: value, z: 0 };
   }
   return { x: value.x ?? 0, y: value.y ?? 0, z: value.z ?? 0 };
+}
+
+/** Resolves the `"auto"` shorthand (no artificial cap beyond the safety ceiling) into a concrete number. */
+function resolveMaxInstances(maxInstances: GridConfig["maxInstances"]): number {
+  const value = maxInstances ?? DEFAULT_MAX_INSTANCES;
+  return value === "auto" ? MAX_INSTANCES_SAFETY_CEILING : value;
 }
 
 /** A weighted model list is an array of `{ model, weight }` objects - distinct from an array of bare sources (strings, or ArrayBuffer instances, which are also typeof "object"). */
@@ -110,7 +117,7 @@ export function resolveConfig(config: GridConfig): ResolvedGridConfig {
     rowOffset: config.rowOffset ?? DEFAULT_ROW_OFFSET,
     rotation: resolveRotation(config.rotation),
     overscan: config.overscan ?? DEFAULT_OVERSCAN,
-    maxInstances: config.maxInstances ?? DEFAULT_MAX_INSTANCES,
+    maxInstances: resolveMaxInstances(config.maxInstances),
     colors: matchBackground && backgroundColor !== "transparent" ? backgroundColor : (config.colors ?? DEFAULT_COLORS),
     hardness: config.hardness ?? DEFAULT_HARDNESS,
     backgroundColor,

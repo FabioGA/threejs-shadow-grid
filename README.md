@@ -156,7 +156,7 @@ Mounts into `config.container`, fills it completely (via `ResizeObserver`), and 
 | `rowOffset` | `number` | `0` | Horizontal offset per row, as a fraction of `cellSize` (can be negative). Row `r` shifts by `(r * rowOffset) mod 1` cell widths - `0.5` gives a brick/masonry pattern, `0.25` a 4-row diagonal cascade, `0` a plain grid. Independent of `arrangement`. |
 | `rotation` | `number \| "random" \| { x?, y?, z? }` (degrees) | `0` | A bare number/`"random"` rotates only around the vertical (Y) axis. Pass `{ x, y, z }` to control each axis independently - each can itself be a fixed number or `"random"`; omitted axes stay at 0. Independent of `arrangement`. |
 | `overscan` | `number` (0-1) | `0.15` | Extra rows/columns rendered past the edges, to avoid pop-in. Rarely needs changing. |
-| `maxInstances` | `number` | `4000` | Safety cap on total rendered objects (perf guard for very small cell sizes / huge containers). |
+| `maxInstances` | `number \| "auto"` | `"auto"` | `"auto"` sizes the grid to exactly what the container needs - no scrolling, so nothing further off-screen is ever rendered - with a large internal ceiling only as a guard against a degenerate config (e.g. a tiny `cellSize` on a huge container). Pass a number instead for an explicit hard cap. |
 | `colors` | `string \| string[] \| { color, weight }[]` | `"#c9ccd6"` | A single CSS color applies to every object. A plain array (e.g. `["#ff4d4d", "#4d79ff"]`) makes each object independently pick one color at random with equal odds. An array of `{ color, weight }` instead partitions the *exact* current instance count proportionally to weight (e.g. weights 70/30 -> ~70%/30% split, not just a 70/30 chance per object) - see "Weighted palettes" below. Ignored if `matchBackground` is `true`. |
 | `hardness` | `number` (0-1) | `0` | Object surface hardness/reflectivity - `0` is soft matte rubber, `1` is hard, glossy, and more reflective. Continuously blends roughness, metalness, and clearcoat. |
 | `backgroundColor` | `string \| "transparent"` | `"#0a0a0f"` | `"transparent"` lets the page's own background show through. A shadow-only backdrop still catches the moving shadow (darkening the page background where shadowed), so shadows stay visible and the unshadowed color is exactly whatever the page's CSS background is - useful when you need the background to match a specific color exactly, since a solid `backgroundColor` is lit (and so shaded/shadowed) by the scene's own light rather than rendered flat. |
@@ -234,7 +234,7 @@ Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thin
 ### Performance notes
 
 - Each unique model renders as a single `InstancedMesh`, so a grid of hundreds of objects is one draw call per model, not one per object.
-- `maxInstances` caps total objects if a very small `cellSize` on a very large container would otherwise generate an excessive count.
+- `maxInstances: "auto"` (default) sizes the grid to exactly the rows x columns the container needs (plus `overscan`) - never more than what's on screen, since there's no scrolling to render ahead for. Pass a number instead for an explicit hard cap.
 - `maxPixelRatio` (default 2) keeps very high-DPI displays from rendering more pixels than the effect needs.
 - Shadows use a single shadow-casting light (the "sun" or the "cursor" spotlight) with one shadow map - never a light per object - which is what makes this affordable even with a large grid.
 - The shadow filter follows `light.style`: `"soft"` uses `PCFSoftShadowMap` (its wider blur is worth the extra cost at that style's already-soft `shadow.radius`); `"medium"`/`"hard"` use the cheaper `PCFShadowMap`, since at their tighter radius the two look effectively the same.
@@ -254,7 +254,7 @@ across changes, unlike FPS) rather than eyeballing smoothness:
 
 | Knob | Values to try |
 | --- | --- |
-| `maxInstances` | 500 / 2000 / 4000 / 8000 / 20000 |
+| `maxInstances` | switch to "fixed" mode in the playground, try 500 / 2000 / 4000 / 8000 / 20000 |
 | `shadowMapSize` | 512 / 1024 / 2048 / 4096 |
 | `shadows` | on / off |
 | antialias | on / off (via browser flags or a temporary code change - not yet a `GridConfig` option) |
