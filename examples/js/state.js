@@ -42,7 +42,7 @@ export const defaultState = {
   autoSweepOnTouch: true,
   sweepSpeed: 2.5,
   ambient: 0.2,
-  easing: 3.5,
+  easing: 8,
   lightColor: "#f1a010",
   lightHardness: 0.25,
   // Matches the library's own default for `lightStyle: "soft"` (see

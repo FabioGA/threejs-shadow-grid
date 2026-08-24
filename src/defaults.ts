@@ -109,7 +109,7 @@ export const DEFAULT_LIGHT: Required<LightConfig> = {
   autoSweepOnTouch: true,
   sweepSpeed: 1,
   ambient: 0.45,
-  easing: 4,
+  easing: 8,
   color: "#ffffff",
   // hardness/shadowMapSize/cursorHeight are style-dependent; resolveLight()
   // always recomputes them unless the caller sets one explicitly.
