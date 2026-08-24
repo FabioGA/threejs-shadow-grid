@@ -237,6 +237,24 @@ Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thin
 - `maxPixelRatio` (default 2) keeps very high-DPI displays from rendering more pixels than the effect needs.
 - Shadows use a single shadow-casting light (the "sun" or the "cursor" spotlight) with one shadow map - never a light per object - which is what makes this affordable even with a large grid.
 
+#### Benchmarking
+
+The demo playground has a dev-only frame-time overlay (press <kbd>P</kbd>) reporting an
+EMA-smoothed frame time/FPS alongside the current `maxInstances`, `shadowMapSize`, `shadows`,
+and `maxPixelRatio` values - it's not shipped in the published package, only in `examples/`.
+When comparing a rendering change, sweep these knobs and record frame time in ms (additive
+across changes, unlike FPS) rather than eyeballing smoothness:
+
+| Knob | Values to try |
+| --- | --- |
+| `maxInstances` | 500 / 2000 / 4000 / 8000 / 20000 |
+| `shadowMapSize` | 512 / 1024 / 2048 / 4096 |
+| `shadows` | on / off |
+| antialias | on / off (via browser flags or a temporary code change - not yet a `GridConfig` option) |
+
+Run each combination on at least one low-end profile (Chrome DevTools CPU throttling, or an
+integrated-GPU laptop) and one high-end profile, since the two can rank changes differently.
+
 ### Roadmap / current scope
 
 v1 ships with STL support only (via `STLLoader`) and auto-fill grid sizing (cell-size driven, not a fixed row/column count) - these were deliberate scope choices to ship a well-tested core first. The internal loader/grid modules are structured so glTF/OBJ support and a fixed-count grid mode can be added without a breaking change to the public API.
