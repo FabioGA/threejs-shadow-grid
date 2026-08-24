@@ -4,23 +4,33 @@ import { randColor } from "./random.js";
 import { scheduleApply } from "./render.js";
 import { state } from "./state.js";
 
+// Every bind* helper below seeds the DOM control FROM `state` at bind time
+// (never the reverse) - `state` (state.js's defaultState, or whatever a
+// caller like Reset/Randomize/JSON-Save already wrote into it) is the
+// single source of truth, matching what render.js already used to
+// construct the live ShadowGrid before any binding ran. The demo.html
+// markup's own value/selected/checked attributes are just initial-paint
+// placeholders, not authoritative - only `state` decides the real config.
+
 export function bindRange(id, key, format) {
   const input = document.getElementById(id);
   const readout = document.getElementById(`${id}-val`);
-  const sync = () => {
+  const render = () => {
+    if (readout) readout.textContent = format ? format(state[key]) : String(state[key]);
+  };
+  input.value = state[key];
+  render();
+  input.addEventListener("input", () => {
     const value = Number(input.value);
     state[key] = value;
-    if (readout) readout.textContent = format ? format(value) : String(value);
-  };
-  input.addEventListener("input", () => {
-    sync();
+    render();
     scheduleApply();
   });
-  sync();
 }
 
 export function bindNumber(id, key) {
   const input = document.getElementById(id);
+  input.value = state[key];
   input.addEventListener("input", () => {
     const value = Number(input.value);
     if (Number.isNaN(value)) return;
@@ -31,6 +41,8 @@ export function bindNumber(id, key) {
 
 export function bindSelect(id, key, onChange) {
   const input = document.getElementById(id);
+  input.value = state[key];
+  if (onChange) onChange(input.value);
   input.addEventListener("change", () => {
     state[key] = input.value;
     if (onChange) onChange(input.value);
@@ -40,6 +52,7 @@ export function bindSelect(id, key, onChange) {
 
 export function bindCheckbox(id, key) {
   const input = document.getElementById(id);
+  input.checked = state[key];
   input.addEventListener("change", () => {
     state[key] = input.checked;
     scheduleApply();
@@ -48,6 +61,7 @@ export function bindCheckbox(id, key) {
 
 export function bindColor(id, key) {
   const input = document.getElementById(id);
+  input.value = state[key];
   input.addEventListener("input", () => {
     state[key] = input.value;
     scheduleApply();

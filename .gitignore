@@ -7,5 +7,9 @@ npm-debug.log*
 .vscode
 **/local.**
 
+# Scratch files used during interactive verification (browser scripts,
+# screenshots) - never meant to be committed.
+.tmp-*
+
 # macOS custom folder icon artifacts (created by Google Drive sync)
 Icon?
