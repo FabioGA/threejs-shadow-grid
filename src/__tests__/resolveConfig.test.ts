@@ -7,6 +7,7 @@ import {
   DEFAULT_OBJECT_SIZE,
   LIGHT_STYLE_PRESETS,
   MAX_CURSOR_HEIGHT,
+  MAX_INSTANCES_SAFETY_CEILING,
   MAX_SHADOW_MAP_SIZE,
   MIN_CURSOR_HEIGHT,
   MIN_SHADOW_MAP_SIZE,
@@ -192,6 +193,23 @@ describe("resolveConfig", () => {
         rotation: { x: 10, z: "random" },
       });
       expect(resolved.rotation).toEqual({ x: 10, y: 0, z: "random" });
+    });
+  });
+
+  describe("maxInstances resolution", () => {
+    it("resolves the default ('auto') to the safety ceiling", () => {
+      const resolved = resolveConfig({ models: "/a.stl", container: makeContainer() });
+      expect(resolved.maxInstances).toBe(MAX_INSTANCES_SAFETY_CEILING);
+    });
+
+    it("resolves an explicit 'auto' to the safety ceiling", () => {
+      const resolved = resolveConfig({ models: "/a.stl", container: makeContainer(), maxInstances: "auto" });
+      expect(resolved.maxInstances).toBe(MAX_INSTANCES_SAFETY_CEILING);
+    });
+
+    it("keeps an explicit number as a hard cap", () => {
+      const resolved = resolveConfig({ models: "/a.stl", container: makeContainer(), maxInstances: 500 });
+      expect(resolved.maxInstances).toBe(500);
     });
   });
 

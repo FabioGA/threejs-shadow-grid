@@ -58,7 +58,7 @@ function tick(now) {
     const fps = emaFrameMs > 0 ? 1000 / emaFrameMs : 0;
     el.textContent = [
       `frame: ${emaFrameMs.toFixed(1)}ms  (${fps.toFixed(0)} fps)`,
-      `maxInstances: ${state.maxInstances}`,
+      `maxInstances: ${state.maxInstancesMode === "auto" ? "auto" : state.maxInstances}`,
       `shadowMapSize: ${state.shadowMapSize}`,
       `shadows: ${state.shadows}`,
       `maxPixelRatio: ${state.maxPixelRatio}`,

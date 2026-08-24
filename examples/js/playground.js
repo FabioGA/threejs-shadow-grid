@@ -54,6 +54,9 @@ bindRange("rowOffset", "rowOffset", (v) => v.toFixed(2));
   });
 });
 bindRange("overscan", "overscan", (v) => v.toFixed(2));
+bindSelect("maxInstancesMode", "maxInstancesMode", (v) =>
+  document.getElementById("maxInstances-fixed-group").classList.toggle("active", v === "fixed")
+);
 bindNumber("maxInstances", "maxInstances");
 bindNumber("seed", "seed");
 
@@ -109,6 +112,7 @@ function syncControlsFromState() {
     document.getElementById(id).value = state.modelWeights[i];
   });
   toggleSubgroup(state.objectSizeMode, "fixed", "objectSize-fixed-group", "objectSize-range-group");
+  document.getElementById("maxInstances-fixed-group").classList.toggle("active", state.maxInstancesMode === "fixed");
   ["X", "Y", "Z"].forEach((axis) => {
     document
       .getElementById(`rotation${axis}-fixed-group`)

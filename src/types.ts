@@ -136,8 +136,16 @@ export interface GridConfig {
   rotation?: RotationConfig;
   /** Extra rows/columns beyond the visible edges, as a fraction of the viewport (avoids pop-in on resize). Default: 0.15. */
   overscan?: number;
-  /** Safety cap on total instances rendered at once (perf guard). Default: 4000. */
-  maxInstances?: number;
+  /**
+   * Total instances rendered at once. `"auto"` (default) sizes the grid to
+   * exactly what the container needs - as many cells as `cellSize` fits
+   * into its width/height (plus `overscan`), no scrolling involved so
+   * nothing further off-screen is ever rendered - with a large internal
+   * ceiling only as a guard against degenerate configs (e.g. a tiny
+   * `cellSize` on a huge container). Pass a number instead for an explicit
+   * hard cap.
+   */
+  maxInstances?: number | "auto";
 
   // ---- Appearance --------------------------------------------------------
   colors?: ColorConfig;
@@ -172,7 +180,7 @@ export interface GridConfig {
 
 /** Fully-resolved internal config (all optional fields filled in, unions narrowed). */
 export interface ResolvedGridConfig extends Required<
-  Omit<GridConfig, "light" | "colors" | "container" | "models" | "rotation">
+  Omit<GridConfig, "light" | "colors" | "container" | "models" | "rotation" | "maxInstances">
 > {
   light: Required<LightConfig>;
   colors: ColorConfig;
@@ -181,4 +189,6 @@ export interface ResolvedGridConfig extends Required<
   /** Per-model weight, parallel to `models` - `null` when `models` wasn't given as weighted entries (equal-probability picking). */
   modelWeights: number[] | null;
   rotation: ResolvedRotationConfig;
+  /** `"auto"` already resolved to a concrete cap - see `GridConfig.maxInstances`. */
+  maxInstances: number;
 }

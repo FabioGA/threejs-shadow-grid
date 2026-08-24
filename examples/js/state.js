@@ -22,6 +22,10 @@ export const defaultState = {
   rotationZMode: "random",
   rotationZDeg: 0,
   overscan: 0.15,
+  // "auto" (default, matches the library default) sizes the grid to exactly
+  // fill the container; "fixed" uses the maxInstances number below as an
+  // explicit hard cap instead.
+  maxInstancesMode: "auto",
   maxInstances: 4000,
   colorsMode: "palette",
   colorSingle: "#8fb8ff",

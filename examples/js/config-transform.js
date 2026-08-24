@@ -21,7 +21,7 @@ export function buildConfig(s) {
       z: axisRotationValue(s.rotationZMode, s.rotationZDeg),
     },
     overscan: s.overscan,
-    maxInstances: s.maxInstances,
+    maxInstances: s.maxInstancesMode === "auto" ? "auto" : s.maxInstances,
     colors:
       s.colorsMode === "palette"
         ? s.colorPalette.map((color, i) => ({ color, weight: s.colorWeights[i] }))
@@ -63,6 +63,7 @@ export function generateCode(s) {
   const backgroundColor = s.backgroundTransparent ? '"transparent"' : `"${s.backgroundColor}"`;
   const modelNames = ["model-a", "model-b", "model-c"];
   const modelsCode = `[\n${modelNames.map((name, i) => `    { model: "/path/to/${name}.stl", weight: ${s.modelWeights[i]} },`).join("\n")}\n  ]`;
+  const maxInstancesCode = s.maxInstancesMode === "auto" ? '"auto"' : `${s.maxInstances}`;
 
   return `import { ShadowGrid } from "threejs-shadow-grid";
 
@@ -76,7 +77,7 @@ const grid = new ShadowGrid({
   rowOffset: ${s.rowOffset},
   rotation: ${rotation},
   overscan: ${s.overscan},
-  maxInstances: ${s.maxInstances},
+  maxInstances: ${maxInstancesCode},
   colors: ${colors},
   backgroundColor: ${backgroundColor},
   matchBackground: ${s.matchBackground},
@@ -141,7 +142,14 @@ export function applyConfigToState(config, state) {
     });
   }
   if ("overscan" in config) state.overscan = config.overscan;
-  if ("maxInstances" in config) state.maxInstances = config.maxInstances;
+  if ("maxInstances" in config) {
+    if (config.maxInstances === "auto") {
+      state.maxInstancesMode = "auto";
+    } else {
+      state.maxInstancesMode = "fixed";
+      state.maxInstances = config.maxInstances;
+    }
+  }
   if ("colors" in config) {
     if (typeof config.colors === "string") {
       state.colorsMode = "single";
