@@ -69,6 +69,13 @@ export class LightRig {
   // on the page" behavior.
   private onWindowPointerMove = (e: PointerEvent) => this.handleWindowPointerMove(e);
   private onDocumentPointerLeave = () => this.handleDocumentPointerLeave();
+  // getBoundingClientRect() is a layout read - a high-frequency pointer
+  // device can fire many pointermove events per rendered frame, and the
+  // container's on-page position essentially never changes mid-frame, so
+  // caching it for one frame (invalidated via rAF) removes the redundant
+  // reads without changing any per-event behavior.
+  private cachedContainerRect: DOMRect | null = null;
+  private containerRectInvalidateRafId: number | null = null;
 
   constructor(scene: THREE.Scene, container: HTMLElement, config: Required<LightConfig>) {
     this.scene = scene;
@@ -224,12 +231,23 @@ export class LightRig {
     return BASE_MODE_TRANSITION_SECONDS / Math.max(MIN_SWEEP_SPEED_FOR_TRANSITION, Math.abs(this.config.sweepSpeed));
   }
 
+  private getContainerRect(): DOMRect {
+    if (!this.cachedContainerRect) {
+      this.cachedContainerRect = this.container.getBoundingClientRect();
+      this.containerRectInvalidateRafId = requestAnimationFrame(() => {
+        this.containerRectInvalidateRafId = null;
+        this.cachedContainerRect = null;
+      });
+    }
+    return this.cachedContainerRect;
+  }
+
   private handleWindowPointerMove(e: PointerEvent) {
     if (this.config.mode === "sweep") return;
 
     this.idleSeconds = 0;
 
-    const rect = this.container.getBoundingClientRect();
+    const rect = this.getContainerRect();
     if (rect.width === 0 || rect.height === 0) return;
 
     const inside =
@@ -338,6 +356,7 @@ export class LightRig {
   dispose() {
     window.removeEventListener("pointermove", this.onWindowPointerMove);
     document.removeEventListener("pointerleave", this.onDocumentPointerLeave);
+    if (this.containerRectInvalidateRafId !== null) cancelAnimationFrame(this.containerRectInvalidateRafId);
     this.scene.remove(this._key, this._key.target, this.ambient);
     this._key.shadow.map?.dispose();
   }

@@ -236,6 +236,8 @@ Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thin
 - `maxInstances` caps total objects if a very small `cellSize` on a very large container would otherwise generate an excessive count.
 - `maxPixelRatio` (default 2) keeps very high-DPI displays from rendering more pixels than the effect needs.
 - Shadows use a single shadow-casting light (the "sun" or the "cursor" spotlight) with one shadow map - never a light per object - which is what makes this affordable even with a large grid.
+- The shadow filter follows `light.style`: `"soft"` uses `PCFSoftShadowMap` (its wider blur is worth the extra cost at that style's already-soft `shadow.radius`); `"medium"`/`"hard"` use the cheaper `PCFShadowMap`, since at their tighter radius the two look effectively the same.
+- Antialiasing is skipped automatically once the effective pixel ratio (`devicePixelRatio` capped by `maxPixelRatio`) reaches 2x or higher - at that point the framebuffer is already supersampled enough that MSAA's extra cost buys little, so it's kept only where it's actually needed (1x displays).
 
 ### Roadmap / current scope
 
