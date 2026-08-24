@@ -19,6 +19,27 @@ export const DEFAULT_MATCH_BACKGROUND = false;
 export const DEFAULT_SEED = 1337;
 export const DEFAULT_MAX_PIXEL_RATIO = 2;
 export const DEFAULT_SHADOWS = true;
+export const DEFAULT_ADAPTIVE_PIXEL_RATIO = true;
+
+/**
+ * Adaptive pixel ratio: once per ADAPTIVE_PIXEL_RATIO_CHECK_INTERVAL_MS, if
+ * the EMA-smoothed frame time is over the "struggling" threshold, step the
+ * live pixel ratio down (floor ADAPTIVE_PIXEL_RATIO_MIN); if it's under the
+ * "comfortable" threshold, step back up toward maxPixelRatio. The gap
+ * between the two thresholds is deliberate hysteresis so it doesn't hover
+ * right at the boundary and "pump" the ratio up and down every check.
+ * Never touches anything when frame time sits between the two - the common
+ * case on hardware with headroom, where this is a complete no-op.
+ */
+export const ADAPTIVE_PIXEL_RATIO_MIN = 1;
+export const ADAPTIVE_PIXEL_RATIO_STEP = 0.25;
+export const ADAPTIVE_PIXEL_RATIO_CHECK_INTERVAL_MS = 1000;
+/** EMA smoothing weight per frame sample - same shape as the demo's perf overlay. */
+export const ADAPTIVE_PIXEL_RATIO_EMA_ALPHA = 0.1;
+/** Step down once EMA frame time exceeds this (~45fps). */
+export const ADAPTIVE_PIXEL_RATIO_FRAME_MS_STEP_DOWN = 22;
+/** Step up once EMA frame time is under this (~71fps - comfortable headroom under a 60fps budget). */
+export const ADAPTIVE_PIXEL_RATIO_FRAME_MS_STEP_UP = 14;
 
 /**
  * How long a ResizeObserver callback waits for resizing to settle before

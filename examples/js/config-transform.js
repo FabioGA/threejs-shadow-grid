@@ -46,6 +46,7 @@ export function buildConfig(s) {
     },
     maxPixelRatio: s.maxPixelRatio,
     shadows: s.shadows,
+    adaptivePixelRatio: s.adaptivePixelRatio,
   };
 }
 
@@ -97,6 +98,7 @@ const grid = new ShadowGrid({
   },
   maxPixelRatio: ${s.maxPixelRatio},
   shadows: ${s.shadows},
+  adaptivePixelRatio: ${s.adaptivePixelRatio},
 });`;
 }
 
@@ -179,4 +181,5 @@ export function applyConfigToState(config, state) {
   }
   if ("maxPixelRatio" in config) state.maxPixelRatio = config.maxPixelRatio;
   if ("shadows" in config) state.shadows = config.shadows;
+  if ("adaptivePixelRatio" in config) state.adaptivePixelRatio = config.adaptivePixelRatio;
 }

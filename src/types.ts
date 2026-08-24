@@ -161,6 +161,13 @@ export interface GridConfig {
   maxPixelRatio?: number;
   /** Enable soft shadows (shadow map). Default: true. */
   shadows?: boolean;
+  /**
+   * Automatically lower the live pixel ratio (down to 1x) under sustained
+   * frame-time pressure, and raise it back toward `maxPixelRatio` once
+   * there's headroom again. A no-op on hardware that never struggles - it
+   * only ever kicks in when frames are actually slow. Default: true.
+   */
+  adaptivePixelRatio?: boolean;
 }
 
 /** Fully-resolved internal config (all optional fields filled in, unions narrowed). */
