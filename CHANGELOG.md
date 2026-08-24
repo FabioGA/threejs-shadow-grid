@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-24
+
+### Added
+
+- `adaptivePixelRatio` (default `true`): automatically lowers the live pixel ratio (down to 1x) under sustained frame-time pressure, and raises it back toward `maxPixelRatio` once there's headroom again. A no-op on hardware that never struggles.
+
+### Changed
+
+- The shadow filter now follows `light.style`: `"soft"` keeps `PCFSoftShadowMap`, `"medium"`/`"hard"` switch to the cheaper `PCFShadowMap`, since at their tighter shadow radius the two look effectively the same.
+- Antialiasing is now skipped automatically once the effective pixel ratio (`devicePixelRatio` capped by `maxPixelRatio`) reaches 2x or higher, where the framebuffer is already supersampled enough that it buys little.
+- Default `light.easing` raised from `4` to `8` for a noticeably snappier, less trailing pointer-follow feel.
+- At the default `hardness: 0`, the object material's clearcoat lobe is now fully disabled (was a low nonzero value) for lower GPU cost with no perceptible visual difference on typical low-poly models.
+- Rendering now pauses automatically when the tab is backgrounded or the container scrolls out of view, resuming cleanly when either becomes true again.
+- A container resize still updates the camera/shadow bounds immediately, but the (potentially expensive) instance grid rebuild is now debounced (~120ms) so an interactive drag-resize or CSS transition doesn't rebuild it on every intermediate frame.
+- Demo: added a dev-only frame-time overlay (press <kbd>P</kbd>) for benchmarking; not shipped in the published package.
+
+### Fixed
+
+- Fixed a demo playground bug where a control's displayed value could silently diverge from its actual default on load, so an unrelated change (e.g. tweaking a color) could apply a batch of stale values and visibly "jump" the grid layout.
+
 ## [1.1.2] - 2026-08-21
 
 ### Changed
