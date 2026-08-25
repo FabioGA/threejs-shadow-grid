@@ -161,7 +161,6 @@ export async function randomGridConfig(models) {
     rotation: { x: randAxisRotation(), y: randAxisRotation(), z: randAxisRotation() },
     colors,
     backgroundColor,
-    matchBackground: Math.random() < 0.15,
     hardness: randRange(0, 1),
     shadows: true,
     light: {

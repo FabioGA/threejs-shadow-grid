@@ -38,7 +38,6 @@ export const defaultState = {
   colorWeights: [1, 2, 2],
   backgroundColor: "#f637ea",
   backgroundTransparent: false,
-  matchBackground: false,
   hardness: 0.25,
   shadows: true,
   maxPixelRatio: 2,
@@ -55,13 +54,11 @@ export const defaultState = {
   easing: 8,
   lightColor: "#f1a010",
   lightHardness: 0.25,
-  // Matches the library's own default for `lightStyle: "soft"` (see
-  // LIGHT_STYLE_PRESETS in src/defaults.ts) - the demo's control always
-  // passes shadowMapSize explicitly (see config-transform.js), so it
-  // doesn't inherit that preset default on its own; this keeps the demo's
-  // out-of-the-box shadow cost representative of what a real consumer
-  // ships instead of defaulting to the slider's max.
-  shadowMapSize: 1024,
+  // The demo's control always passes shadowMapSize explicitly (see
+  // config-transform.js), so it doesn't inherit the `lightStyle` preset's
+  // own default (see LIGHT_STYLE_PRESETS in src/defaults.ts). Set above the
+  // "soft" preset's 1024 default for crisper shadows out of the box.
+  shadowMapSize: 2048,
 };
 
 export const state = {
