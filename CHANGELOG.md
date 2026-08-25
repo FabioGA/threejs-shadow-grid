@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `rotationOrder` config to control the order the three `rotation` axes combine in (one of Three.js's six `Euler` orders, default `"XYZ"`). The axis applied last (outermost, the first letter) always spins around its own true world axis regardless of what the other two axes are doing - fixed or `"random"` - so e.g. `"ZYX"` keeps a Z (roll/tilt-toward-viewer) rotation reading clean no matter how Y or X vary. Demo: exposed as an `order` control in the playground's rotation section, and the x/y/z axis labels now show their on-screen meaning (pitch/yaw/roll) relative to the fixed camera.
 
+### Security
+
+- Pinned the transitive `esbuild` devDependency (via `tsup`/`vitest`) to `^0.28.1` via `overrides`, fixing a low-severity arbitrary file read advisory in esbuild's dev server ([GHSA-g7r4-m6w7-qqqr](https://github.com/advisories/GHSA-g7r4-m6w7-qqqr)). Dev-only; not part of the published package.
+
+### Changed
+
+- Releases now publish via a tag-triggered GitHub Actions workflow with npm provenance (`npm publish --provenance`), replacing manual `npm publish` from a local machine.
+
 ## [1.4.0] - 2026-08-25
 
 ### Added
