@@ -9,6 +9,7 @@ import {
   OBJECT_MATERIAL_ROUGHNESS_HARD,
   OBJECT_MATERIAL_ROUGHNESS_SOFT,
   PIXELS_PER_UNIT,
+  RANDOM_ARRANGEMENT_MAX_Z_JITTER_FACTOR,
 } from "./defaults";
 import { createColorPicker } from "./colors";
 import type { LoadedModel } from "./loaders";
@@ -32,6 +33,17 @@ function axisRotationRadians(axis: AxisRotation, rng: () => number): number {
 function fractionalPart(value: number): number {
   const f = value % 1;
   return f < 0 ? f + 1 : f;
+}
+
+/**
+ * Max magnitude of the z-position jitter `GridBuilder.rebuild()` applies per
+ * instance when `arrangement` is `"random"` (world units) - single source of
+ * truth shared with `ShadowGrid`'s "auto" `shadowDistance` sizing, so the
+ * two never drift apart.
+ */
+export function maxZJitterUnits(config: Pick<ResolvedGridConfig, "arrangement" | "jitter" | "cellSize">): number {
+  if (config.arrangement !== "random") return 0;
+  return config.jitter * (config.cellSize / PIXELS_PER_UNIT) * RANDOM_ARRANGEMENT_MAX_Z_JITTER_FACTOR;
 }
 
 /** One geometry+material pairing that becomes its own `InstancedMesh`. `ownedByGrid` marks materials `GridBuilder` itself created (shared, hardness-controlled, disposed on teardown) vs. a GLTF's own baked material (hands off - see `applyHardness`/`dispose`). */
@@ -127,6 +139,7 @@ export class GridBuilder {
     // Geometry is normalized (in loaders.ts) to the largest size objectSize
     // can resolve to; a { min, max } range then scales each instance down from that reference.
     const referenceSize = maxObjectSize(config.objectSize);
+    const maxZJitter = maxZJitterUnits(config);
 
     // Built once per rebuild (not per cell), so weighted colors/models can
     // pre-partition the exact `total` instance count instead of an independent per-cell dice roll.
@@ -164,7 +177,7 @@ export class GridBuilder {
 
         const jitterX = (rng() - 0.5) * jitter * cellSizeUnits;
         const jitterY = (rng() - 0.5) * jitter * cellSizeUnits;
-        const jitterZ = (rng() - 0.5) * jitter * cellSizeUnits * 0.6;
+        const jitterZ = (rng() - 0.5) * 2 * maxZJitter;
         const rotX = axisRotationRadians(config.rotation.x, rng);
         const rotY = axisRotationRadians(config.rotation.y, rng);
         const rotZ = axisRotationRadians(config.rotation.z, rng);

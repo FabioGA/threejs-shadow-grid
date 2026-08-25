@@ -1,17 +1,21 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { maxObjectSize, resolveConfig } from "../resolveConfig";
+import { maxObjectSize, resolveConfig, resolveShadowDistance } from "../resolveConfig";
 import {
   DEFAULT_ARRANGEMENT,
   DEFAULT_CELL_SIZE,
   DEFAULT_OBJECT_SIZE,
+  DEFAULT_SHADOW_DISTANCE,
   LIGHT_STYLE_PRESETS,
   MAX_CURSOR_HEIGHT,
   MAX_INSTANCES_SAFETY_CEILING,
+  MAX_SHADOW_DISTANCE,
   MAX_SHADOW_MAP_SIZE,
   MIN_CURSOR_HEIGHT,
+  MIN_SHADOW_DISTANCE,
   MIN_SHADOW_MAP_SIZE,
   PIXELS_PER_UNIT,
+  SHADOW_DISTANCE_AUTO_CLEARANCE,
 } from "../defaults";
 
 function makeContainer(): HTMLElement {
@@ -26,6 +30,7 @@ describe("resolveConfig", () => {
     const resolved = resolveConfig({ models: "/a.stl", container });
     expect(resolved.cellSize).toBe(DEFAULT_CELL_SIZE);
     expect(resolved.objectSize).toBe(DEFAULT_OBJECT_SIZE);
+    expect(resolved.shadowDistance).toBe(DEFAULT_SHADOW_DISTANCE);
     expect(resolved.arrangement).toBe(DEFAULT_ARRANGEMENT);
     expect(resolved.models).toEqual(["/a.stl"]);
     expect(resolved.container).toBe(container);
@@ -243,6 +248,18 @@ describe("resolveConfig", () => {
     });
   });
 
+  describe("shadowDistance resolution", () => {
+    it("defaults to 'auto'", () => {
+      const resolved = resolveConfig({ models: "/a.stl", container: makeContainer() });
+      expect(resolved.shadowDistance).toBe("auto");
+    });
+
+    it("passes an explicit number through unresolved", () => {
+      const resolved = resolveConfig({ models: "/a.stl", container: makeContainer(), shadowDistance: 250 });
+      expect(resolved.shadowDistance).toBe(250);
+    });
+  });
+
   describe("matchBackground", () => {
     it("forces colors to backgroundColor when matchBackground is true", () => {
       const resolved = resolveConfig({
@@ -275,5 +292,40 @@ describe("maxObjectSize", () => {
 
   it("returns max for a { min, max } range", () => {
     expect(maxObjectSize({ min: 50, max: 150 })).toBe(150);
+  });
+});
+
+describe("resolveShadowDistance", () => {
+  it("'auto' sizes the distance to clear the model radius plus jitter plus clearance", () => {
+    const maxModelRadiusUnits = 2;
+    const zJitterUnits = 0.5;
+    const result = resolveShadowDistance("auto", maxModelRadiusUnits, zJitterUnits);
+    const expected = maxModelRadiusUnits + zJitterUnits + SHADOW_DISTANCE_AUTO_CLEARANCE / PIXELS_PER_UNIT;
+    expect(result).toBeCloseTo(expected, 10);
+  });
+
+  it("converts an explicit px distance to world units", () => {
+    const result = resolveShadowDistance(300, 0, 0);
+    expect(result).toBeCloseTo(300 / PIXELS_PER_UNIT, 10);
+  });
+
+  it("'auto' with no model radius or jitter still resolves to the clearance alone", () => {
+    const result = resolveShadowDistance("auto", 0, 0);
+    expect(result).toBeCloseTo(SHADOW_DISTANCE_AUTO_CLEARANCE / PIXELS_PER_UNIT, 10);
+  });
+
+  it("clamps an explicit distance below the minimum", () => {
+    const result = resolveShadowDistance(1, 0, 0);
+    expect(result).toBeCloseTo(MIN_SHADOW_DISTANCE / PIXELS_PER_UNIT, 10);
+  });
+
+  it("clamps an explicit distance above the maximum", () => {
+    const result = resolveShadowDistance(999999, 0, 0);
+    expect(result).toBeCloseTo(MAX_SHADOW_DISTANCE / PIXELS_PER_UNIT, 10);
+  });
+
+  it("clamps 'auto' above the maximum for an enormous model", () => {
+    const result = resolveShadowDistance("auto", 999999, 0);
+    expect(result).toBeCloseTo(MAX_SHADOW_DISTANCE / PIXELS_PER_UNIT, 10);
   });
 });

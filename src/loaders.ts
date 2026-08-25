@@ -16,6 +16,14 @@ export interface ModelPart {
 export interface LoadedModel {
   parts: ModelPart[];
   colorOverride: string | null;
+  /**
+   * Radius (world units, post-normalization) of the sphere that circumscribes
+   * this model regardless of orientation - i.e. how far its geometry can
+   * reach from its own center under any `rotation`. Used by `ShadowGrid` to
+   * size `shadowDistance: "auto"` so the backdrop always clears it. `0` for a
+   * model that failed to load.
+   */
+  boundingRadius: number;
 }
 
 /** One requested model to load. */
@@ -137,9 +145,20 @@ function extractGltfParts(scene: THREE.Group): RawGltfPart[] {
  * them all by the *same* factor so the combined largest dimension equals
  * `targetSize` - the multi-part equivalent of `normalizeGeometry` below,
  * needed so a multi-material model's pieces stay spatially coherent as one
- * object instead of each normalizing independently.
+ * object instead of each normalizing independently. Also returns
+ * `boundingRadius`: half the (post-scale) combined bounding box's diagonal -
+ * the sphere, centered on the shared pivot every part now shares (the
+ * combined box's center, translated to the origin), that circumscribes the
+ * *whole* model regardless of orientation. Computed from the combined box
+ * rather than each part's own `boundingSphere`, since a part's own sphere is
+ * centered on that part's local center, not the shared origin the model
+ * actually rotates about - relying on it alone would understate the reach of
+ * a model whose parts sit far apart.
  */
-function normalizeGltfParts(rawParts: RawGltfPart[], targetSize: number): ModelPart[] {
+function normalizeGltfParts(
+  rawParts: RawGltfPart[],
+  targetSize: number
+): { parts: ModelPart[]; boundingRadius: number } {
   const combinedBox = new THREE.Box3();
   for (const { geometry } of rawParts) {
     geometry.computeBoundingBox();
@@ -152,14 +171,17 @@ function normalizeGltfParts(rawParts: RawGltfPart[], targetSize: number): ModelP
   combinedBox.getCenter(center);
   const maxDim = Math.max(size.x, size.y, size.z) || 1;
   const scale = targetSize / maxDim;
+  const boundingRadius = size.length() * scale * 0.5;
 
-  return rawParts.map(({ geometry, material }) => {
+  const parts = rawParts.map(({ geometry, material }) => {
     geometry.translate(-center.x, -center.y, -center.z);
     geometry.scale(scale, scale, scale);
     geometry.computeVertexNormals();
     geometry.computeBoundingSphere();
     return { geometry, material };
   });
+
+  return { parts, boundingRadius };
 }
 
 /**
@@ -167,9 +189,15 @@ function normalizeGltfParts(rawParts: RawGltfPart[], targetSize: number): ModelP
  * bounding-box dimension equals `targetSize`. This is what lets users
  * drop in wildly different STL files (different units, different scales,
  * off-center pivots) and still get a uniform-looking grid via one
- * `objectSize` config value.
+ * `objectSize` config value. Also returns `boundingRadius`: half the
+ * (post-scale) bounding box's diagonal, i.e. the sphere centered on the
+ * origin (where the geometry now sits, and where `rotation` pivots it) that
+ * circumscribes it regardless of orientation.
  */
-function normalizeGeometry(geometry: THREE.BufferGeometry, targetSize: number): THREE.BufferGeometry {
+function normalizeGeometry(
+  geometry: THREE.BufferGeometry,
+  targetSize: number
+): { geometry: THREE.BufferGeometry; boundingRadius: number } {
   geometry.computeBoundingBox();
   const box = geometry.boundingBox!;
   const size = new THREE.Vector3();
@@ -185,7 +213,8 @@ function normalizeGeometry(geometry: THREE.BufferGeometry, targetSize: number): 
 
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
-  return geometry;
+  const boundingRadius = size.length() * scale * 0.5;
+  return { geometry, boundingRadius };
 }
 
 // Caches the raw (un-normalized) parsed result per URL, so re-fetching is
@@ -244,17 +273,17 @@ export async function loadModels(requests: ModelRequest[], objectSize: number): 
         if (resolvedFormat === "gltf") {
           const rawParts = await loadRawGltf(source);
           const clonedRawParts = rawParts.map(({ geometry, material }) => ({ geometry: geometry.clone(), material }));
-          const parts = normalizeGltfParts(clonedRawParts, objectSize);
-          return { parts, colorOverride };
+          const { parts, boundingRadius } = normalizeGltfParts(clonedRawParts, objectSize);
+          return { parts, colorOverride, boundingRadius };
         }
 
         const rawGeometry = await loadRawStl(source);
-        const geometry = normalizeGeometry(rawGeometry.clone(), objectSize);
-        return { parts: [{ geometry, material: null }], colorOverride };
+        const { geometry, boundingRadius } = normalizeGeometry(rawGeometry.clone(), objectSize);
+        return { parts: [{ geometry, material: null }], colorOverride, boundingRadius };
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error(err);
-        return { parts: [], colorOverride };
+        return { parts: [], colorOverride, boundingRadius: 0 };
       }
     })
   );

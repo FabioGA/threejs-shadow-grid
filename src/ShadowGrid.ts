@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { maxObjectSize, resolveConfig } from "./resolveConfig";
+import { maxObjectSize, resolveConfig, resolveShadowDistance } from "./resolveConfig";
 import { loadModels } from "./loaders";
-import { GridBuilder } from "./grid";
+import { GridBuilder, maxZJitterUnits } from "./grid";
 import { LightRig } from "./light";
 import {
   ADAPTIVE_PIXEL_RATIO_CHECK_INTERVAL_MS,
@@ -41,6 +41,8 @@ export class ShadowGrid {
   private viewportHeightUnits = 1;
   private destroyed = false;
   private loadToken = 0;
+  /** Largest boundingRadius across the currently loaded models (world units) - see applyShadowDistance(). */
+  private maxModelRadiusUnits = 0;
   private containerPrevPosition: string | null = null;
   // The render loop only runs while both are true - no reason to spend GPU
   // time on a backgrounded tab or a container scrolled out of view, since
@@ -218,6 +220,21 @@ export class ShadowGrid {
   }
 
   /**
+   * Recomputes the backdrop's distance from the grid plane (from
+   * `shadowDistance`, the deepest currently loaded model, and any
+   * `arrangement: "random"` z-jitter) and applies it to both the backdrop
+   * mesh and the light's shadow-camera far planes. Called after a model load
+   * resolves, and on any config-only update (e.g. `shadowDistance` itself,
+   * or - in "auto" mode - `cellSize`/`jitter`/`arrangement`).
+   */
+  private applyShadowDistance() {
+    const zJitterUnits = maxZJitterUnits(this.config);
+    const distance = resolveShadowDistance(this.config.shadowDistance, this.maxModelRadiusUnits, zJitterUnits);
+    if (this.backdrop) this.backdrop.position.z = -distance;
+    this.lightRig.setBackdropDistance(distance);
+  }
+
+  /**
    * Opacity for the transparent-mode shadow-only backdrop, derived from the
    * ambient light so shadow contrast stays consistent with how dark shadows
    * look in opaque/lit mode (lower ambient -> darker shadow).
@@ -238,6 +255,8 @@ export class ShadowGrid {
       const loaded = await loadModels(requests, objectSizeUnits);
       if (this.destroyed || token !== this.loadToken) return;
       this.gridBuilder.setModels(loaded);
+      this.maxModelRadiusUnits = Math.max(0, ...loaded.map((model) => model.boundingRadius));
+      this.applyShadowDistance();
       this.rebuildGrid();
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -357,6 +376,7 @@ export class ShadowGrid {
     if (modelsChanged) {
       this.loadAndBuild();
     } else {
+      this.applyShadowDistance();
       this.handleResize();
     }
   }

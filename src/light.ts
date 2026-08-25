@@ -61,6 +61,8 @@ export class LightRig {
   private cursorHeightConfigured = 7;
   /** "cursor" light's actual height, in world units, after flooring for full coverage - see applyCursorShadowBounds(). */
   private cursorHeightWorld = 7;
+  /** World-unit distance from the grid plane to the backdrop, so shadow-camera far planes clear it - see setBackdropDistance(). Default matches the pre-shadowDistance hardcoded gap. */
+  private backdropDistanceUnits = 1;
   // Listened on window/document, not the container: the container often
   // sits behind page content (z-index-wise), so a container-scoped listener
   // only fires while it's the topmost hit-test target - a small, gappy
@@ -136,6 +138,12 @@ export class LightRig {
     }
   }
 
+  /** Updates the backdrop's world-unit distance from the grid plane and re-derives shadow bounds immediately, so the change takes effect without waiting for the next resize. */
+  setBackdropDistance(distance: number) {
+    this.backdropDistanceUnits = distance;
+    this.setShadowBounds(this.halfWidthUnits, this.halfHeightUnits);
+  }
+
   private applySunShadowBounds(key: THREE.DirectionalLight, halfWidthUnits: number, halfHeightUnits: number) {
     const cam = key.shadow.camera as THREE.OrthographicCamera;
     const margin = Math.max(halfWidthUnits, halfHeightUnits) * 0.35 + 1;
@@ -144,7 +152,7 @@ export class LightRig {
     cam.top = halfHeightUnits + margin;
     cam.bottom = -halfHeightUnits - margin;
     cam.near = 0.1;
-    cam.far = this.lightDistance * 3 + 20;
+    cam.far = this.lightDistance * 3 + 20 + this.backdropDistanceUnits;
     cam.updateProjectionMatrix();
   }
 
@@ -167,7 +175,7 @@ export class LightRig {
     // front-loaded near its near plane, so a needlessly wide span starves
     // real objects of precision and shows up as shadow-acne artifacts.
     const clearance = 3; // headroom above the target, so tall objects aren't near-clipped
-    const farthestPoint = Math.sqrt(diag * diag + (this.cursorHeightWorld + 1) ** 2); // +1: backdrop is one unit behind the grid
+    const farthestPoint = Math.sqrt(diag * diag + (this.cursorHeightWorld + this.backdropDistanceUnits) ** 2);
     cam.near = Math.max(0.1, this.cursorHeightWorld - clearance);
     cam.far = farthestPoint + 1;
     cam.updateProjectionMatrix();

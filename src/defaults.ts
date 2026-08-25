@@ -9,6 +9,14 @@ export const DEFAULT_CELL_SIZE = 220;
 export const DEFAULT_OBJECT_SIZE = 120;
 export const DEFAULT_ARRANGEMENT = "grid" as const;
 export const DEFAULT_JITTER = 0.4;
+export const DEFAULT_SHADOW_DISTANCE = "auto" as const;
+/** Clamp range for `GridConfig.shadowDistance`, in CSS px. MIN avoids a degenerate near-zero/negative backdrop gap; MAX keeps the backdrop inside the main orthographic camera's own far clip (see ShadowGrid's camera: position z=10, far=100). */
+export const MIN_SHADOW_DISTANCE = 20;
+export const MAX_SHADOW_DISTANCE = 8000;
+/** Extra clearance added above the deepest model's radius (+ jitter) in "auto" mode, in CSS px - pure breathing room. */
+export const SHADOW_DISTANCE_AUTO_CLEARANCE = 40;
+/** Half-range coefficient for `arrangement: "random"`'s z-position jitter (world units, relative to `jitter * cellSizeUnits`) - see grid.ts's maxZJitterUnits(). */
+export const RANDOM_ARRANGEMENT_MAX_Z_JITTER_FACTOR = 0.3;
 export const DEFAULT_ROW_OFFSET = 0;
 export const DEFAULT_ROTATION = 0;
 export const DEFAULT_OVERSCAN = 0.15;
