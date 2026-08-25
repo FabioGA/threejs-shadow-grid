@@ -12,6 +12,7 @@ export function buildConfig(s) {
     models: models.map((model, i) => ({ model, weight: s.modelWeights[i] })),
     cellSize: s.cellSize,
     objectSize: s.objectSizeMode === "range" ? { min: s.objectSizeMin, max: s.objectSizeMax } : s.objectSize,
+    shadowDistance: s.shadowDistanceMode === "auto" ? "auto" : s.shadowDistance,
     arrangement: s.arrangement,
     jitter: s.jitter,
     rowOffset: s.rowOffset,
@@ -54,6 +55,7 @@ export function buildConfig(s) {
 export function generateCode(s) {
   const objectSize =
     s.objectSizeMode === "range" ? `{ min: ${s.objectSizeMin}, max: ${s.objectSizeMax} }` : `${s.objectSize}`;
+  const shadowDistanceCode = s.shadowDistanceMode === "auto" ? '"auto"' : `${s.shadowDistance}`;
   const axisCode = (mode, deg) => (mode === "random" ? '"random"' : `${deg}`);
   const rotation = `{ x: ${axisCode(s.rotationXMode, s.rotationXDeg)}, y: ${axisCode(s.rotationYMode, s.rotationYDeg)}, z: ${axisCode(s.rotationZMode, s.rotationZDeg)} }`;
   const colors =
@@ -72,6 +74,7 @@ const grid = new ShadowGrid({
   models: ${modelsCode}, // one URL, an array of them, or [{ model, weight }] to control the mix
   cellSize: ${s.cellSize},
   objectSize: ${objectSize},
+  shadowDistance: ${shadowDistanceCode},
   arrangement: "${s.arrangement}",
   jitter: ${s.jitter},
   rowOffset: ${s.rowOffset},
@@ -124,6 +127,14 @@ export function applyConfigToState(config, state) {
     } else {
       state.objectSizeMode = "fixed";
       state.objectSize = config.objectSize;
+    }
+  }
+  if ("shadowDistance" in config) {
+    if (config.shadowDistance === "auto") {
+      state.shadowDistanceMode = "auto";
+    } else {
+      state.shadowDistanceMode = "fixed";
+      state.shadowDistance = config.shadowDistance;
     }
   }
   if ("arrangement" in config) state.arrangement = config.arrangement;
