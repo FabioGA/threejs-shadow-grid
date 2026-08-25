@@ -230,9 +230,14 @@ export class ShadowGrid {
     const token = ++this.loadToken;
     const objectSizeUnits = maxObjectSize(this.config.objectSize) / PIXELS_PER_UNIT;
     try {
-      const geometries = await loadModels(this.config.models, objectSizeUnits);
+      const requests = this.config.models.map((source, i) => ({
+        source,
+        format: this.config.modelFormats[i],
+        colorOverride: this.config.modelColorOverrides[i],
+      }));
+      const loaded = await loadModels(requests, objectSizeUnits);
       if (this.destroyed || token !== this.loadToken) return;
-      this.gridBuilder.setGeometries(geometries);
+      this.gridBuilder.setModels(loaded);
       this.rebuildGrid();
     } catch (err) {
       // eslint-disable-next-line no-console

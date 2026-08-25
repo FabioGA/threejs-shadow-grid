@@ -19,7 +19,7 @@
   </a>
 </p>
 
-Drop in one or more STL models; the library tiles them to completely fill whatever container you give it, and lights them with a single shadow-casting light that follows the mouse (or sweeps automatically on touch devices), so the shadows shift as people move their cursor around the page. Choose between a "sun" (parallel, uniform shadows) or a "cursor" light that hovers right over the pointer, casting shadows that genuinely vary per object based on distance.
+Drop in one or more STL or GLTF/GLB models; the library tiles them to completely fill whatever container you give it, and lights them with a single shadow-casting light that follows the mouse (or sweeps automatically on touch devices), so the shadows shift as people move their cursor around the page. Choose between a "sun" (parallel, uniform shadows) or a "cursor" light that hovers right over the pointer, casting shadows that genuinely vary per object based on distance.
 
 It's framework-agnostic - a plain TypeScript class with no React/Vue/etc dependency - so it drops into any site.
 
@@ -83,7 +83,8 @@ function ShadowGridBackground(props: GridConfig) {
 - **Three simplified light presets** (`soft` / `medium` / `hard`) plus a continuous `hardness` knob, so you never have to touch raw Three.js lighting values.
 - **Physically-based material** from soft matte rubber to hard, glossy, and reflective, dialed with a single `hardness` knob.
 - **Grid or randomized arrangement**, independent per-axis rotation and size controls (fixed or randomized), and per-row horizontal offset for brick/masonry/cascade layouts.
-- **Weighted color palettes and weighted STL model mixing** - exact proportional splits (e.g. 70/30), not just a per-object dice roll.
+- **STL and GLTF/GLB models, freely mixed** - a GLTF model keeps its own baked material(s)/textures by default, or renders flat-colored via a per-model `color` override.
+- **Weighted color palettes and weighted model mixing** - exact proportional splits (e.g. 70/30), not just a per-object dice roll.
 - **Ships as ESM + CJS + full TypeScript types.**
 
 ## Gallery
@@ -140,7 +141,7 @@ Mounts into `config.container`, fills it completely (via `ResizeObserver`), and 
 
 | Method | Description |
 | --- | --- |
-| `update(patch: Partial<GridConfig>): void` | Merges `patch` into the current config and re-renders. Reloads STL models only if `models` or `objectSize` changed; otherwise just resizes/rebuilds in place - cheap enough to call from a live control panel (see the playground in the live demo). |
+| `update(patch: Partial<GridConfig>): void` | Merges `patch` into the current config and re-renders. Reloads models only if `models` or `objectSize` changed; otherwise just resizes/rebuilds in place - cheap enough to call from a live control panel (see the playground in the live demo). |
 | `destroy(): void` | Stops the render loop, disconnects the `ResizeObserver`, disposes all GPU/DOM resources, and removes the canvas. Safe to call once, e.g. on route change or component unmount. |
 
 ### `GridConfig`
@@ -148,9 +149,9 @@ Mounts into `config.container`, fills it completely (via `ResizeObserver`), and 
 | Option | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `container` | `HTMLElement \| string` | required | Element, or CSS selector, to fill completely. |
-| `models` | `string \| string[] \| { model, weight }[]` | required | STL URL(s). A plain array is randomly distributed across cells with equal odds. An array of `{ model, weight }` instead partitions the *exact* current instance count proportionally to weight, the same way weighted `colors` do - see "Weighted models" below. |
+| `models` | `string \| string[] \| { model, weight?, color?, format? }[]` | required | STL/GLTF/GLB URL(s) (or already-fetched `ArrayBuffer`s). A plain array is randomly distributed across cells with equal odds. An array of `{ model, weight }` instead partitions the *exact* current instance count proportionally to weight, the same way weighted `colors` do - see "Weighted models" below. Format is auto-detected from the URL extension (or a GLB's magic bytes); `format` forces it, needed only for a raw `.gltf` (not `.glb`) `ArrayBuffer`. `color` forces that model to a flat color instead of its own material - see "GLTF models" below. |
 | `cellSize` | `number` (px) | `220` | Distance between neighboring object centers. Columns/rows are always auto-computed from this + the container size - this is what makes the grid "infinite" (it always fills the space). |
-| `objectSize` | `number \| { min, max }` (px) | `120` | Each model is centered and scaled so its largest bounding-box dimension equals this. Lets you mix STL files of wildly different native scales. A fixed number gives every object the same size; `{ min, max }` gives each object an independent random size in that range. |
+| `objectSize` | `number \| { min, max }` (px) | `120` | Each model is centered and scaled so its largest bounding-box dimension equals this. Lets you mix models of wildly different native scales. A fixed number gives every object the same size; `{ min, max }` gives each object an independent random size in that range. |
 | `arrangement` | `"grid" \| "random"` | `"grid"` | `"random"` jitters position per cell (amount controlled by `jitter`). |
 | `jitter` | `number` (0-1) | `0.4` | Only used when `arrangement` is `"random"`. |
 | `rowOffset` | `number` | `0` | Horizontal offset per row, as a fraction of `cellSize` (can be negative). Row `r` shifts by `(r * rowOffset) mod 1` cell widths - `0.5` gives a brick/masonry pattern, `0.25` a 4-row diagonal cascade, `0` a plain grid. Independent of `arrangement`. |
@@ -189,7 +190,40 @@ models: [
 ]
 ```
 
-Same idea as weighted `colors`, applied to which STL each cell renders: weights are relative (not required to sum to 100), and each rebuild partitions the *exact* instance count across models proportionally to weight, then shuffles - so a plain array (`models: ["/a.stl", "/b.stl"]`) still picks per cell at random with equal odds, but a weighted list gives an exact split every time instead of an approximate one.
+Same idea as weighted `colors`, applied to which model each cell renders: weights are relative (not required to sum to 100), and each rebuild partitions the *exact* instance count across models proportionally to weight, then shuffles - so a plain array (`models: ["/a.stl", "/b.stl"]`) still picks per cell at random with equal odds, but a weighted list gives an exact split every time instead of an approximate one.
+
+### GLTF models
+
+STL and GLTF/GLB models can be freely mixed in the same `models` list:
+
+```ts
+models: ["/models/logo-mark.stl", "/models/car.glb"]
+```
+
+A GLTF model keeps its own baked material(s) and textures exactly as authored - including a model with several materials (e.g. body/wheels/glass), each rendered at full fidelity. Add `color` to a model entry to override that instead, forcing it to a flat CSS color (the same look STL models already get from `colors`):
+
+```ts
+models: [
+  "/models/logo-mark.stl",
+  { model: "/models/car.glb", color: "#ff4d4d" }, // flat-colored, ignoring the file's own material(s)
+]
+```
+
+Format (`"stl"` or `"gltf"`) is auto-detected from the URL's extension, or from a `.glb`'s magic bytes if you pass an already-fetched `ArrayBuffer`. The one case that needs an explicit `format`: a raw (not `.glb`) `.gltf` `ArrayBuffer`, since plain-JSON glTF has no reliable magic number to sniff - and note that such a buffer can't resolve any external `.bin`/texture files it references (no base URL to resolve them against), so prefer `.glb` or a URL string for anything with external resources.
+
+#### GLTF limitations
+
+A failed model doesn't stop the grid - the grid cells that would have used it are simply left empty while every other model in the list keeps rendering normally, and the failure reason logs to the console prefixed `[threejs-shadow-grid]`. In the demo, the hidden error overlay (press <kbd>E</kbd> - see [Benchmarking](#benchmarking)) mirrors that console output on-page, which is the fastest way to see *why* a specific file didn't show up. Known gaps that produce that kind of failure:
+
+- **Draco-compressed meshes** (`KHR_draco_mesh_compression`) aren't supported - this library doesn't wire up a `DRACOLoader`. This is the most likely reason a GLTF/GLB fails silently-ish: many marketplace downloads (e.g. Sketchfab's default/optimized export) and Blender's glTF exporter both offer Draco compression as an opt-in, and it's easy to have it on without realizing. Re-export/re-download without Draco compression if a file won't load.
+- **Meshopt-compressed buffers** (`EXT_meshopt_compression`) aren't supported either - no `MeshoptDecoder` is wired up.
+- **Basis Universal / KTX2 compressed textures** (`KHR_texture_basisu`) aren't supported - no `KTX2Loader` is wired up. The mesh itself may still load; only the texture fails.
+- **A single mesh with multiple per-face materials** (a `geometry.groups`-based multi-material primitive, as opposed to separate primitives/meshes each with their own material, which *is* fully supported) only renders with its first material - a console warning names the mesh.
+- **A raw (non-`.glb`) `.gltf` `ArrayBuffer`** can't resolve external `.bin`/texture references (no base path) - use `.glb` or a URL string instead (see above).
+- **A GLTF with no mesh nodes** (lights/cameras only, or an empty scene) throws a clear "no renderable meshes" error rather than rendering nothing silently.
+- **Cross-origin models**: like any browser fetch, a model hosted on another origin needs that origin to serve permissive CORS headers, or the load fails with a CORS error.
+
+None of the above corrupt the rest of the grid - they reject that one model's load, which is what results in an error appearing on that model's console line/overlay entry while your other models still render normally.
 
 ### Light
 
@@ -231,6 +265,10 @@ The light starts in "auto sweep" mode and switches to following the pointer the 
 
 Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thingiverse.com), [Printables](https://www.printables.com), or exporting a simple shape from Blender/Figma-to-3D tools. Keep files small (a few hundred KB) since they load in the browser - decimate/simplify highly detailed prints before using them as a tiled background element.
 
+### Getting GLTF models
+
+`.glb` (binary, self-contained) is the easiest format to use - one file, textures and all. Good free sources: [Sketchfab](https://sketchfab.com) (filter by downloadable + a permissive license), [Poly Pizza](https://poly.pizza), or exporting from Blender. Textures make GLTF files heavier than an equivalent STL - keep an eye on total texture resolution/count for anything used as a tiled background element, the same way you'd budget STL triangle count.
+
 ### Performance notes
 
 - Each unique model renders as a single `InstancedMesh`, so a grid of hundreds of objects is one draw call per model, not one per object.
@@ -248,9 +286,12 @@ Any binary or ASCII STL works. Good free sources: [Thingiverse](https://www.thin
 
 The demo playground has a dev-only frame-time overlay (press <kbd>P</kbd>) reporting an
 EMA-smoothed frame time/FPS alongside the current `maxInstances`, `shadowMapSize`, `shadows`,
-and `maxPixelRatio` values - it's not shipped in the published package, only in `examples/`.
-When comparing a rendering change, sweep these knobs and record frame time in ms (additive
-across changes, unlike FPS) rather than eyeballing smoothness:
+and `maxPixelRatio` values, and a separate error-log overlay (press <kbd>E</kbd>) mirroring
+`console.error`/`console.warn` on-page - handy for spotting a model load failure (see
+[GLTF limitations](#gltf-limitations)) without opening devtools. Neither is shipped in the
+published package, only in `examples/`. When comparing a rendering change, sweep these knobs
+and record frame time in ms (additive across changes, unlike FPS) rather than eyeballing
+smoothness:
 
 | Knob | Values to try |
 | --- | --- |
@@ -264,7 +305,7 @@ integrated-GPU laptop) and one high-end profile, since the two can rank changes 
 
 ### Roadmap / current scope
 
-v1 ships with STL support only (via `STLLoader`) and auto-fill grid sizing (cell-size driven, not a fixed row/column count) - these were deliberate scope choices to ship a well-tested core first. The internal loader/grid modules are structured so glTF/OBJ support and a fixed-count grid mode can be added without a breaking change to the public API.
+STL and GLTF/GLB are both supported (`STLLoader`/`GLTFLoader`); auto-fill grid sizing (cell-size driven, not a fixed row/column count) remains the only layout mode - a deliberate scope choice to ship a well-tested core first. The internal loader/grid modules are structured so a fixed-count grid mode, OBJ support, and per-face-material GLTF meshes (currently: first material only, with a console warning) can be added without a breaking change to the public API.
 
 ## Development
 

@@ -14,6 +14,7 @@ import {
 } from "./dom-bindings.js";
 import { models } from "./models.js";
 import { randomGridConfig } from "./random.js";
+import "./error-overlay.js";
 import "./feature-toggle.js";
 import "./perf-overlay.js";
 import { bg, codeOutput, configJson, scheduleApply, syncConfigJson } from "./render.js";

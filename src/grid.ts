@@ -11,6 +11,7 @@ import {
   PIXELS_PER_UNIT,
 } from "./defaults";
 import { createColorPicker } from "./colors";
+import type { LoadedModel } from "./loaders";
 import { createModelIndexPicker } from "./models";
 import { createRng } from "./random";
 import { maxObjectSize } from "./resolveConfig";
@@ -33,34 +34,59 @@ function fractionalPart(value: number): number {
   return f < 0 ? f + 1 : f;
 }
 
+/** One geometry+material pairing that becomes its own `InstancedMesh`. `ownedByGrid` marks materials `GridBuilder` itself created (shared, hardness-controlled, disposed on teardown) vs. a GLTF's own baked material (hands off - see `applyHardness`/`dispose`). */
+interface ResolvedPart {
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material;
+  ownedByGrid: boolean;
+}
+
 /**
- * Builds and maintains the InstancedMesh grid: given loaded geometries and
+ * Builds and maintains the InstancedMesh grid: given loaded models and
  * the visible viewport size (world units), works out rows/columns needed
- * to cover it (plus overscan) and places one object per cell. Rebuilding
- * recreates the InstancedMeshes sized for the new cell count.
+ * to cover it (plus overscan) and places one object per cell. A model may
+ * back more than one InstancedMesh (a multi-material GLTF becomes one
+ * InstancedMesh per part, all sharing the same per-cell transform).
+ * Rebuilding recreates the InstancedMeshes sized for the new cell count.
  */
 export class GridBuilder {
   private scene: THREE.Scene;
   private meshes: THREE.InstancedMesh[] = [];
-  private materials: THREE.MeshPhysicalMaterial[] = [];
-  private geometries: THREE.BufferGeometry[] = [];
+  // Outer index = logical model index (parallel to config.models); inner = that model's parts (>1 for a multi-material GLTF).
+  private models: ResolvedPart[][] = [];
+  // Materials GridBuilder itself constructed (shared flat MeshPhysicalMaterials for STL / color-overridden models) -
+  // the only materials it disposes or applies `hardness` to. A GLTF's baked materials are never added here.
+  private ownedMaterials = new Set<THREE.MeshPhysicalMaterial>();
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
   }
 
-  setGeometries(geometries: THREE.BufferGeometry[]) {
-    this.geometries.forEach((g) => g.dispose());
-    this.geometries = geometries;
-    // One shared material per model - per-instance color comes from the
-    // InstancedMesh color buffer instead. Materials persist across
-    // rebuilds (only geometry doesn't); roughness/metalness/clearcoat are
-    // applied from `hardness` in rebuild() below.
-    this.materials.forEach((m) => m.dispose());
-    this.materials = geometries.map(() => new THREE.MeshPhysicalMaterial());
+  setModels(loaded: LoadedModel[]) {
+    for (const parts of this.models) for (const part of parts) part.geometry.dispose();
+    for (const material of this.ownedMaterials) material.dispose();
+    this.ownedMaterials.clear();
+
+    this.models = loaded.map(({ parts, colorOverride }) =>
+      parts.map((part): ResolvedPart => {
+        if (colorOverride) {
+          const material = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(colorOverride) });
+          this.ownedMaterials.add(material);
+          return { geometry: part.geometry, material, ownedByGrid: true };
+        }
+        if (part.material) {
+          // GLTF's own baked material - kept as-is, untouched by hardness/color.
+          return { geometry: part.geometry, material: part.material, ownedByGrid: false };
+        }
+        // STL (or any part with no baked material) - shared blank material, colored per-instance below.
+        const material = new THREE.MeshPhysicalMaterial();
+        this.ownedMaterials.add(material);
+        return { geometry: part.geometry, material, ownedByGrid: true };
+      })
+    );
   }
 
-  /** Applies the current `hardness` (0 = soft rubber, 1 = hard/glossy) to all materials in place. */
+  /** Applies the current `hardness` (0 = soft rubber, 1 = hard/glossy) to GridBuilder-owned materials only - never a GLTF's baked material. */
   private applyHardness(hardness: number) {
     const t = THREE.MathUtils.clamp(hardness, 0, 1);
     const roughness = THREE.MathUtils.lerp(OBJECT_MATERIAL_ROUGHNESS_SOFT, OBJECT_MATERIAL_ROUGHNESS_HARD, t);
@@ -71,7 +97,7 @@ export class GridBuilder {
       OBJECT_MATERIAL_CLEARCOAT_ROUGHNESS_HARD,
       t
     );
-    for (const material of this.materials) {
+    for (const material of this.ownedMaterials) {
       material.roughness = roughness;
       material.metalness = metalness;
       material.clearcoat = clearcoat;
@@ -82,7 +108,7 @@ export class GridBuilder {
   /** viewportWidth/Height are in world units (Three.js units), not pixels. */
   rebuild(viewportWidthUnits: number, viewportHeightUnits: number, config: ResolvedGridConfig) {
     this.clearMeshes();
-    if (this.geometries.length === 0) return;
+    if (this.models.length === 0) return;
 
     this.applyHardness(config.hardness);
 
@@ -105,7 +131,7 @@ export class GridBuilder {
     // Built once per rebuild (not per cell), so weighted colors/models can
     // pre-partition the exact `total` instance count instead of an independent per-cell dice roll.
     const colorPicker = createColorPicker(config.colors, total, rng);
-    const modelPicker = createModelIndexPicker(this.geometries.length, config.modelWeights, total, rng);
+    const modelPicker = createModelIndexPicker(this.models.length, config.modelWeights, total, rng);
 
     // Pass 1: decide per-cell model index + color + transform jitter, and tally instances per model.
     type CellPlan = {
@@ -120,7 +146,7 @@ export class GridBuilder {
       color: THREE.Color;
     };
     const plans: CellPlan[] = [];
-    const countPerModel = new Array(this.geometries.length).fill(0);
+    const countPerModel = new Array(this.models.length).fill(0);
 
     const originX = -((columns - 1) * cellSizeUnits) / 2;
     const originY = -((rows - 1) * cellSizeUnits) / 2;
@@ -162,20 +188,27 @@ export class GridBuilder {
       }
     }
 
-    // Pass 2: create one InstancedMesh per model, sized to its instance count.
-    const meshes = this.geometries.map((geometry, modelIndex) => {
-      const count = countPerModel[modelIndex];
-      const mesh = new THREE.InstancedMesh(geometry, this.materials[modelIndex], Math.max(count, 1));
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.count = count;
-      mesh.frustumCulled = false;
-      return mesh;
-    });
+    // Pass 2: create one InstancedMesh per part (>1 per model for a
+    // multi-material GLTF), sized to that model's instance count. All
+    // part-meshes of the same model share the same per-cell transform
+    // (written below from the one plan per cell), so a multi-part model
+    // still renders/moves as one coherent object per grid cell.
+    const meshesByModel: { mesh: THREE.InstancedMesh; ownedByGrid: boolean }[][] = this.models.map(
+      (parts, modelIndex) => {
+        const count = countPerModel[modelIndex];
+        return parts.map(({ geometry, material, ownedByGrid }) => {
+          const mesh = new THREE.InstancedMesh(geometry, material, Math.max(count, 1));
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.count = count;
+          mesh.frustumCulled = false;
+          return { mesh, ownedByGrid };
+        });
+      }
+    );
 
-    const writeIndex = new Array(this.geometries.length).fill(0);
+    const writeIndex = new Array(this.models.length).fill(0);
     for (const plan of plans) {
-      const mesh = meshes[plan.modelIndex];
       const idx = writeIndex[plan.modelIndex]++;
 
       _position.set(plan.x, plan.y, plan.z);
@@ -183,10 +216,16 @@ export class GridBuilder {
       _quaternion.setFromEuler(_euler);
       _scale.setScalar(plan.scale);
       _matrix.compose(_position, _quaternion, _scale);
-      mesh.setMatrixAt(idx, _matrix);
-      mesh.setColorAt(idx, plan.color);
+
+      for (const { mesh, ownedByGrid } of meshesByModel[plan.modelIndex]) {
+        mesh.setMatrixAt(idx, _matrix);
+        // Only GridBuilder-owned (flat/shared) materials read per-instance
+        // color; a GLTF's baked material renders as authored.
+        if (ownedByGrid) mesh.setColorAt(idx, plan.color);
+      }
     }
 
+    const meshes = meshesByModel.flat().map(({ mesh }) => mesh);
     meshes.forEach((mesh) => {
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
@@ -206,9 +245,13 @@ export class GridBuilder {
 
   dispose() {
     this.clearMeshes();
-    this.materials.forEach((m) => m.dispose());
-    this.materials = [];
-    this.geometries.forEach((g) => g.dispose());
-    this.geometries = [];
+    for (const parts of this.models) for (const part of parts) part.geometry.dispose();
+    // GLTF-baked materials/textures are intentionally not disposed here -
+    // they're owned by loaders.ts's raw-parts cache (same non-disposal
+    // trade-off already made for STL's cached raw geometry), not by
+    // GridBuilder. Only materials GridBuilder itself created are disposed.
+    for (const material of this.ownedMaterials) material.dispose();
+    this.ownedMaterials.clear();
+    this.models = [];
   }
 }

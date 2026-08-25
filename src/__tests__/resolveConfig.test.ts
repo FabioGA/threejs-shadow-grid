@@ -86,6 +86,36 @@ describe("resolveConfig", () => {
       expect(resolved.models).toEqual(["/a.stl", "/b.stl"]);
       expect(resolved.modelWeights).toEqual([70, 30]);
     });
+
+    it("defaults modelColorOverrides/modelFormats to null for bare sources", () => {
+      const resolved = resolveConfig({ models: ["/a.stl", "/b.stl"], container: makeContainer() });
+      expect(resolved.modelColorOverrides).toEqual([null, null]);
+      expect(resolved.modelFormats).toEqual([null, null]);
+    });
+
+    it("resolves { model, color } shorthand in a bare (non-weighted) array, distinct from a weighted entry", () => {
+      const resolved = resolveConfig({
+        models: ["/a.stl", { model: "/b.glb", color: "#ff0000", format: "gltf" }],
+        container: makeContainer(),
+      });
+      expect(resolved.models).toEqual(["/a.stl", "/b.glb"]);
+      expect(resolved.modelWeights).toBeNull();
+      expect(resolved.modelColorOverrides).toEqual([null, "#ff0000"]);
+      expect(resolved.modelFormats).toEqual([null, "gltf"]);
+    });
+
+    it("resolves color/format on weighted entries", () => {
+      const resolved = resolveConfig({
+        models: [
+          { model: "/a.stl", weight: 70 },
+          { model: "/b.glb", weight: 30, color: "#00ff00", format: "gltf" },
+        ],
+        container: makeContainer(),
+      });
+      expect(resolved.modelWeights).toEqual([70, 30]);
+      expect(resolved.modelColorOverrides).toEqual([null, "#00ff00"]);
+      expect(resolved.modelFormats).toEqual([null, "gltf"]);
+    });
   });
 
   describe("light resolution", () => {

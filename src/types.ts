@@ -1,13 +1,36 @@
 /** Public configuration surface for ShadowGrid - friendly knobs instead of raw Three.js/lighting concepts. */
 
-/** A URL (or already-fetched ArrayBuffer) pointing at an .stl file. */
+/** A URL (or already-fetched ArrayBuffer) pointing at a .stl, .glb, or .gltf file. */
 export type ModelSource = string | ArrayBuffer;
+
+/** `"stl"` or `"gltf"` (covers both .gltf and .glb). Normally auto-detected - see `WeightedModel.format`. */
+export type ModelFormat = "stl" | "gltf";
 
 /** One entry in a weighted model list - see `GridConfig.models`. Weights are relative, not required to sum to any total. */
 export interface WeightedModel {
   model: ModelSource;
   weight: number;
+  /**
+   * Flat CSS color for this model, overriding any material(s) baked into a
+   * GLTF/GLB file (same look STL models already get from `GridConfig.colors`).
+   * No effect on STL, which has no material of its own and always uses
+   * `colors` regardless of this field.
+   */
+  color?: string;
+  /**
+   * Forces format detection instead of auto-detecting from the source. Only
+   * needed for a `.gltf` (not `.glb`) passed as a raw `ArrayBuffer` - unlike
+   * `.glb`, plain-JSON glTF has no reliable magic number to sniff.
+   */
+  format?: ModelFormat;
 }
+
+/**
+ * Non-weighted shorthand for one entry in a bare (non-weighted) `models`
+ * array/value - either a bare source, or `{ model, color?, format? }`
+ * without a `weight`.
+ */
+export type ModelEntry = ModelSource | { model: ModelSource; color?: string; format?: ModelFormat };
 
 /** How objects are placed within the auto-filled grid. */
 export type Arrangement = "grid" | "random";
@@ -105,11 +128,12 @@ export type ColorConfig = string | string[] | WeightedColor[];
 
 export interface GridConfig {
   /**
-   * One or more STL model URLs. A plain array picks one per cell with
-   * equal probability; `{ model, weight }` entries control the exact
-   * per-model share instead (e.g. 70/30 -> ~70%/30% of objects).
+   * One or more STL/GLTF/GLB model URLs (or `{ model, ... }` entries). A
+   * plain array picks one per cell with equal probability; `{ model, weight }`
+   * entries control the exact per-model share instead (e.g. 70/30 -> ~70%/30%
+   * of objects). See `WeightedModel.color` for per-model color overrides.
    */
-  models: ModelSource | ModelSource[] | WeightedModel[];
+  models: ModelEntry | ModelEntry[] | WeightedModel[];
 
   /** DOM element (or CSS selector) the scene mounts into and fills completely. */
   container: HTMLElement | string;
@@ -188,6 +212,10 @@ export interface ResolvedGridConfig extends Required<
   models: ModelSource[];
   /** Per-model weight, parallel to `models` - `null` when `models` wasn't given as weighted entries (equal-probability picking). */
   modelWeights: number[] | null;
+  /** Per-model flat-color override, parallel to `models` - `null` entry means no override (GLTF keeps its baked material; STL uses `colors` as always). */
+  modelColorOverrides: (string | null)[];
+  /** Per-model explicit format override, parallel to `models` - `null` entry means auto-detect. */
+  modelFormats: (ModelFormat | null)[];
   rotation: ResolvedRotationConfig;
   /** `"auto"` already resolved to a concrete cap - see `GridConfig.maxInstances`. */
   maxInstances: number;
