@@ -52,6 +52,28 @@ export interface ResolvedRotationConfig {
   z: AxisRotation;
 }
 
+/**
+ * The order the three axis rotations are combined in - one of Three.js's six
+ * `Euler` orders. Axes are applied right-to-left: the **last** letter is
+ * applied first (innermost), so its visible effect is most easily distorted
+ * by whichever axes come after it; the **first** letter is applied last
+ * (outermost), so it always spins the object around its own true world axis
+ * *regardless* of what the other two axes are currently doing (fixed or
+ * `"random"`) - nothing applied after it can throw it off.
+ *
+ * ShadowGrid's camera looks straight down -Z with Y up, so on screen: X is
+ * pitch (nods toward/away from the camera), Y is yaw (spins like a
+ * turntable - the library's default axis), Z is roll (tilts sideways, like
+ * a head-tilt - the axis parallel to the viewer).
+ *
+ * Default `"XYZ"` keeps X always-clean (rarely the one that matters). Pick
+ * `"ZYX"` if Z (roll/tilt) is the axis you're actively driving and want to
+ * always read as a clean on-screen tilt no matter what X/Y are doing - e.g.
+ * a fixed Z tilt plus a `"random"` Y for per-object variety without ever
+ * warping the tilt itself.
+ */
+export type RotationOrder = "XYZ" | "XZY" | "YXZ" | "YZX" | "ZXY" | "ZYX";
+
 /** Target on-screen object size, in CSS pixels (largest bounding-box dimension). `{ min, max }` randomizes per object. */
 export type SizeConfig = number | { min: number; max: number };
 
@@ -167,6 +189,12 @@ export interface GridConfig {
    * the vertical (Y) axis; `{ x, y, z }` controls each axis independently. Default: 0.
    */
   rotation?: RotationConfig;
+  /**
+   * The order the three `rotation` axes combine in - see `RotationOrder`
+   * for the full explanation. Only matters once two or more axes are
+   * simultaneously non-zero; irrelevant for single-axis rotation. Default: `"XYZ"`.
+   */
+  rotationOrder?: RotationOrder;
   /** Extra rows/columns beyond the visible edges, as a fraction of the viewport (avoids pop-in on resize). Default: 0.15. */
   overscan?: number;
   /**

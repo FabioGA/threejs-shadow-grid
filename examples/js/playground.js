@@ -48,6 +48,7 @@ bindRange("rowOffset", "rowOffset", (v) => v.toFixed(2));
   );
   bindRange(`rotation${axis}Deg`, `rotation${axis}Deg`, (v) => `${v}°`);
 });
+bindSelect("rotationOrder", "rotationOrder");
 ["modelWeight0", "modelWeight1", "modelWeight2"].forEach((id, i) => {
   const input = document.getElementById(id);
   input.value = state.modelWeights[i];

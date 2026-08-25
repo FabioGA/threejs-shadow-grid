@@ -21,6 +21,7 @@ export function buildConfig(s) {
       y: axisRotationValue(s.rotationYMode, s.rotationYDeg),
       z: axisRotationValue(s.rotationZMode, s.rotationZDeg),
     },
+    rotationOrder: s.rotationOrder,
     overscan: s.overscan,
     maxInstances: s.maxInstancesMode === "auto" ? "auto" : s.maxInstances,
     colors:
@@ -78,6 +79,7 @@ const grid = new ShadowGrid({
   jitter: ${s.jitter},
   rowOffset: ${s.rowOffset},
   rotation: ${rotation},
+  rotationOrder: "${s.rotationOrder}",
   overscan: ${s.overscan},
   maxInstances: ${maxInstancesCode},
   colors: ${colors},
@@ -150,6 +152,7 @@ export function applyConfigToState(config, state) {
       }
     });
   }
+  if ("rotationOrder" in config) state.rotationOrder = config.rotationOrder;
   if ("overscan" in config) state.overscan = config.overscan;
   if ("maxInstances" in config) {
     if (config.maxInstances === "auto") {

@@ -221,6 +221,7 @@ export class GridBuilder {
     );
 
     const writeIndex = new Array(this.models.length).fill(0);
+    _euler.order = config.rotationOrder;
     for (const plan of plans) {
       const idx = writeIndex[plan.modelIndex]++;
 

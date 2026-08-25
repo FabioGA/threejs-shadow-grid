@@ -108,7 +108,7 @@
               <div class="axis-group">
                 <div class="axis-group-label">rotation (x / y / z)</div>
                 <div class="field">
-                  <label for="rotationXMode">x</label>
+                  <label for="rotationXMode" title="Pitch: nods the object toward/away from the camera.">x (pitch)</label>
                   <select id="rotationXMode">
                     <option value="fixed" selected>fixed</option>
                     <option value="random">random</option>
@@ -122,7 +122,7 @@
                   </div>
                 </div>
                 <div class="field">
-                  <label for="rotationYMode">y</label>
+                  <label for="rotationYMode" title="Yaw: spins the object like a turntable (screen-vertical axis).">y (yaw)</label>
                   <select id="rotationYMode">
                     <option value="fixed" selected>fixed</option>
                     <option value="random">random</option>
@@ -136,7 +136,7 @@
                   </div>
                 </div>
                 <div class="field">
-                  <label for="rotationZMode">z</label>
+                  <label for="rotationZMode" title="Roll: tilts the object sideways on screen, like a head-tilt (axis parallel to the viewer).">z (roll)</label>
                   <select id="rotationZMode">
                     <option value="fixed" selected>fixed</option>
                     <option value="random">random</option>
@@ -148,6 +148,22 @@
                     <input type="range" id="rotationZDeg" min="0" max="360" step="5" value="0" />
                     <span class="val" id="rotationZDeg-val">0°</span>
                   </div>
+                </div>
+                <div class="field">
+                  <label
+                    for="rotationOrder"
+                    title="Axes combine right-to-left: the last letter is applied first (innermost), so it's the one most easily distorted by the other two; the first letter is applied last (outermost), so it always spins around its own true world axis no matter what the other two are doing - fixed or random. Only matters once 2+ axes are non-zero at once. E.g. pick ZYX to keep a Z (roll/tilt) rotation always reading clean while Y is random."
+                  >
+                    order
+                  </label>
+                  <select id="rotationOrder">
+                    <option value="XYZ" selected>XYZ (x stays clean)</option>
+                    <option value="XZY">XZY (x stays clean)</option>
+                    <option value="YXZ">YXZ (y/yaw stays clean)</option>
+                    <option value="YZX">YZX (y/yaw stays clean)</option>
+                    <option value="ZXY">ZXY (z/roll stays clean)</option>
+                    <option value="ZYX">ZYX (z/roll stays clean)</option>
+                  </select>
                 </div>
               </div>
               <div class="axis-group">
