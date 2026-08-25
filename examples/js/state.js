@@ -26,6 +26,7 @@ export const defaultState = {
   rotationYDeg: 0,
   rotationZMode: "random",
   rotationZDeg: 0,
+  rotationOrder: "XYZ",
   overscan: 0.15,
   // "auto" (default, matches the library default) sizes the grid to exactly
   // fill the container; "fixed" uses the maxInstances number below as an

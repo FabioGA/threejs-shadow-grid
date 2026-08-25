@@ -1,4 +1,4 @@
-import type { LightConfig, LightStyle } from "./types";
+import type { LightConfig, LightStyle, RotationOrder } from "./types";
 
 /** How many CSS pixels one Three.js world unit maps to (orthographic camera is scaled so this is exact). */
 export const PIXELS_PER_UNIT = 100;
@@ -19,6 +19,7 @@ export const SHADOW_DISTANCE_AUTO_CLEARANCE = 40;
 export const RANDOM_ARRANGEMENT_MAX_Z_JITTER_FACTOR = 0.3;
 export const DEFAULT_ROW_OFFSET = 0;
 export const DEFAULT_ROTATION = 0;
+export const DEFAULT_ROTATION_ORDER: RotationOrder = "XYZ";
 export const DEFAULT_OVERSCAN = 0.15;
 export const DEFAULT_MAX_INSTANCES = "auto" as const;
 /**

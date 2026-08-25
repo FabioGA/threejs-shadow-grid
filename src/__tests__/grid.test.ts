@@ -16,6 +16,7 @@ function buildConfig(overrides: Partial<ResolvedGridConfig> = {}): ResolvedGridC
     jitter: 0.4,
     rowOffset: 0,
     rotation: { x: 0, y: 0, z: 0 },
+    rotationOrder: "XYZ",
     overscan: 0,
     maxInstances: 4000,
     modelWeights: null,
@@ -42,6 +43,16 @@ function positionAt(mesh: THREE.InstancedMesh, index: number): THREE.Vector3 {
   const scale = new THREE.Vector3();
   matrix.decompose(position, quaternion, scale);
   return position;
+}
+
+function quaternionAt(mesh: THREE.InstancedMesh, index: number): THREE.Quaternion {
+  const matrix = new THREE.Matrix4();
+  mesh.getMatrixAt(index, matrix);
+  const position = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  matrix.decompose(position, quaternion, scale);
+  return quaternion;
 }
 
 /** A single-part model with no baked material - the STL shape (or GLTF+color-override, once GridBuilder substitutes a flat material). */
@@ -132,6 +143,26 @@ describe("GridBuilder", () => {
 
     expect(row1Col0.x - row0Col0.x).toBeCloseTo(0.5, 10);
     expect(row0Col0.z).toBe(0); // arrangement "grid" forces jitter (and so z-jitter) to 0
+  });
+
+  it("composes rotation.x/y/z per rotationOrder, matching THREE.Euler directly", () => {
+    const scene = new THREE.Scene();
+    const builder = new GridBuilder(scene);
+    builder.setModels([stlModel(new THREE.BoxGeometry(1, 1, 1))]);
+
+    const rotation = { x: 10, y: 20, z: 30 };
+    builder.rebuild(1, 1, buildConfig({ rotation, rotationOrder: "ZYX" }));
+
+    const mesh = scene.children[0] as THREE.InstancedMesh;
+    const actual = quaternionAt(mesh, 0);
+    const expected = new THREE.Quaternion().setFromEuler(
+      new THREE.Euler((rotation.x * Math.PI) / 180, (rotation.y * Math.PI) / 180, (rotation.z * Math.PI) / 180, "ZYX")
+    );
+
+    expect(actual.x).toBeCloseTo(expected.x, 6);
+    expect(actual.y).toBeCloseTo(expected.y, 6);
+    expect(actual.z).toBeCloseTo(expected.z, 6);
+    expect(actual.w).toBeCloseTo(expected.w, 6);
   });
 
   it("removes and disposes previous meshes on rebuild", () => {

@@ -229,6 +229,16 @@ describe("resolveConfig", () => {
       });
       expect(resolved.rotation).toEqual({ x: 10, y: 0, z: "random" });
     });
+
+    it("defaults rotationOrder to XYZ", () => {
+      const resolved = resolveConfig({ models: "/a.stl", container: makeContainer() });
+      expect(resolved.rotationOrder).toBe("XYZ");
+    });
+
+    it("passes through an explicit rotationOrder", () => {
+      const resolved = resolveConfig({ models: "/a.stl", container: makeContainer(), rotationOrder: "ZYX" });
+      expect(resolved.rotationOrder).toBe("ZYX");
+    });
   });
 
   describe("maxInstances resolution", () => {
