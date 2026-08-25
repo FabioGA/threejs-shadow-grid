@@ -193,17 +193,19 @@ export class GridBuilder {
     // part-meshes of the same model share the same per-cell transform
     // (written below from the one plan per cell), so a multi-part model
     // still renders/moves as one coherent object per grid cell.
-    const meshesByModel: { mesh: THREE.InstancedMesh; ownedByGrid: boolean }[][] = this.models.map((parts, modelIndex) => {
-      const count = countPerModel[modelIndex];
-      return parts.map(({ geometry, material, ownedByGrid }) => {
-        const mesh = new THREE.InstancedMesh(geometry, material, Math.max(count, 1));
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        mesh.count = count;
-        mesh.frustumCulled = false;
-        return { mesh, ownedByGrid };
-      });
-    });
+    const meshesByModel: { mesh: THREE.InstancedMesh; ownedByGrid: boolean }[][] = this.models.map(
+      (parts, modelIndex) => {
+        const count = countPerModel[modelIndex];
+        return parts.map(({ geometry, material, ownedByGrid }) => {
+          const mesh = new THREE.InstancedMesh(geometry, material, Math.max(count, 1));
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.count = count;
+          mesh.frustumCulled = false;
+          return { mesh, ownedByGrid };
+        });
+      }
+    );
 
     const writeIndex = new Array(this.models.length).fill(0);
     for (const plan of plans) {

@@ -210,10 +210,7 @@ describe("loadModels - GLTF", () => {
     emptyScene.add(new THREE.Object3D());
     const badGlb = await exportGlb(emptyScene);
 
-    const [good, bad] = await loadModels(
-      [stlRequest(goodBuffer), stlRequest(badGlb, { format: "gltf" })],
-      10
-    );
+    const [good, bad] = await loadModels([stlRequest(goodBuffer), stlRequest(badGlb, { format: "gltf" })], 10);
 
     expect(good.parts).toHaveLength(1);
     expect(bad.parts).toEqual([]);

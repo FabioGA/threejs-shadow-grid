@@ -84,7 +84,11 @@ describe("GridBuilder", () => {
     const builder = new GridBuilder(scene);
     builder.setModels([stlModel(new THREE.BoxGeometry(1, 1, 1)), stlModel(new THREE.BoxGeometry(1, 1, 1))]);
 
-    builder.rebuild(20, 20, buildConfig({ modelWeights: null, modelColorOverrides: [null, null], modelFormats: [null, null] }));
+    builder.rebuild(
+      20,
+      20,
+      buildConfig({ modelWeights: null, modelColorOverrides: [null, null], modelFormats: [null, null] })
+    );
 
     const meshes = scene.children.filter((c): c is THREE.InstancedMesh => c instanceof THREE.InstancedMesh);
     expect(meshes.length).toBe(2);
@@ -217,7 +221,9 @@ describe("GridBuilder", () => {
       const scene = new THREE.Scene();
       const builder = new GridBuilder(scene);
       const bakedMaterial = new THREE.MeshStandardMaterial({ color: "#ff0000" });
-      builder.setModels([{ parts: [{ geometry: new THREE.BoxGeometry(1, 1, 1), material: bakedMaterial }], colorOverride: "#00ff00" }]);
+      builder.setModels([
+        { parts: [{ geometry: new THREE.BoxGeometry(1, 1, 1), material: bakedMaterial }], colorOverride: "#00ff00" },
+      ]);
 
       builder.rebuild(4, 2, buildConfig());
 
@@ -247,7 +253,11 @@ describe("GridBuilder", () => {
         { parts: [], colorOverride: null }, // stands in for a model that failed to load
       ]);
 
-      builder.rebuild(20, 20, buildConfig({ modelWeights: null, modelColorOverrides: [null, null], modelFormats: [null, "gltf"] }));
+      builder.rebuild(
+        20,
+        20,
+        buildConfig({ modelWeights: null, modelColorOverrides: [null, null], modelFormats: [null, "gltf"] })
+      );
 
       const meshes = scene.children.filter((c): c is THREE.InstancedMesh => c instanceof THREE.InstancedMesh);
       expect(meshes.length).toBe(1); // only the working model produced a mesh
@@ -259,7 +269,10 @@ describe("GridBuilder", () => {
       const builder = new GridBuilder(scene);
       const bakedMaterial = new THREE.MeshStandardMaterial({ color: "#ff0000" });
       const bakedDispose = vi.spyOn(bakedMaterial, "dispose");
-      builder.setModels([stlModel(new THREE.BoxGeometry(1, 1, 1)), gltfModel(new THREE.BoxGeometry(1, 1, 1), bakedMaterial)]);
+      builder.setModels([
+        stlModel(new THREE.BoxGeometry(1, 1, 1)),
+        gltfModel(new THREE.BoxGeometry(1, 1, 1), bakedMaterial),
+      ]);
       builder.rebuild(4, 2, buildConfig({ modelColorOverrides: [null, null], modelFormats: [null, "gltf"] }));
 
       builder.dispose();
