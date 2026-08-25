@@ -10,5 +10,7 @@ export type {
   AxisRotation,
   SizeConfig,
   ModelSource,
+  ModelFormat,
+  ModelEntry,
   WeightedModel,
 } from "./types";

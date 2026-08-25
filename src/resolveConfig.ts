@@ -1,6 +1,8 @@
 import type {
   GridConfig,
   LightConfig,
+  ModelEntry,
+  ModelFormat,
   ModelSource,
   ResolvedGridConfig,
   ResolvedRotationConfig,
@@ -73,19 +75,47 @@ function resolveMaxInstances(maxInstances: GridConfig["maxInstances"]): number {
   return value === "auto" ? MAX_INSTANCES_SAFETY_CEILING : value;
 }
 
-/** A weighted model list is an array of `{ model, weight }` objects - distinct from an array of bare sources (strings, or ArrayBuffer instances, which are also typeof "object"). */
-function isWeightedModelList(models: ModelSource[] | WeightedModel[]): models is WeightedModel[] {
-  const first = models[0];
-  return typeof first === "object" && !(first instanceof ArrayBuffer);
+/** Narrows a `ModelEntry`/`WeightedModel` array entry that's an object (not a bare source string/ArrayBuffer). */
+function isEntryObject(entry: ModelEntry | WeightedModel): entry is Exclude<ModelEntry, ModelSource> | WeightedModel {
+  return typeof entry === "object" && !(entry instanceof ArrayBuffer);
 }
 
-/** Splits `GridConfig.models` into the flat source list to load and, when given as weighted entries, the parallel per-model weights. */
-function resolveModels(models: GridConfig["models"]): { models: ModelSource[]; modelWeights: number[] | null } {
+/**
+ * A weighted model list is an array of `{ model, weight }` objects - distinct
+ * from bare sources (strings, or ArrayBuffer instances, which are also
+ * `typeof "object"`) and from the `{ model, color }` shorthand (which has no
+ * `weight`).
+ */
+function isWeightedModelList(models: ModelEntry[] | WeightedModel[]): models is WeightedModel[] {
+  const first = models[0];
+  return isEntryObject(first) && "weight" in first;
+}
+
+/** Splits `GridConfig.models` into the flat source list to load and, per model, its resolved weight/color/format. */
+function resolveModels(models: GridConfig["models"]): {
+  models: ModelSource[];
+  modelWeights: number[] | null;
+  modelColorOverrides: (string | null)[];
+  modelFormats: (ModelFormat | null)[];
+} {
   const list = Array.isArray(models) ? models : [models];
+
   if (isWeightedModelList(list)) {
-    return { models: list.map((entry) => entry.model), modelWeights: list.map((entry) => entry.weight) };
+    return {
+      models: list.map((entry) => entry.model),
+      modelWeights: list.map((entry) => entry.weight),
+      modelColorOverrides: list.map((entry) => entry.color ?? null),
+      modelFormats: list.map((entry) => entry.format ?? null),
+    };
   }
-  return { models: list, modelWeights: null };
+
+  const entries = list as ModelEntry[];
+  return {
+    models: entries.map((entry) => (isEntryObject(entry) ? entry.model : entry)),
+    modelWeights: null,
+    modelColorOverrides: entries.map((entry) => (isEntryObject(entry) ? (entry.color ?? null) : null)),
+    modelFormats: entries.map((entry) => (isEntryObject(entry) ? (entry.format ?? null) : null)),
+  };
 }
 
 /**
@@ -99,16 +129,18 @@ export function maxObjectSize(objectSize: SizeConfig): number {
 
 export function resolveConfig(config: GridConfig): ResolvedGridConfig {
   if (!config.models || (Array.isArray(config.models) && config.models.length === 0)) {
-    throw new Error("[threejs-shadow-grid] config.models is required (an STL URL, or an array of them).");
+    throw new Error("[threejs-shadow-grid] config.models is required (an STL/GLTF/GLB URL, or an array of them).");
   }
 
   const backgroundColor = config.backgroundColor ?? DEFAULT_BACKGROUND_COLOR;
   const matchBackground = config.matchBackground ?? DEFAULT_MATCH_BACKGROUND;
-  const { models, modelWeights } = resolveModels(config.models);
+  const { models, modelWeights, modelColorOverrides, modelFormats } = resolveModels(config.models);
 
   const resolved: ResolvedGridConfig = {
     models,
     modelWeights,
+    modelColorOverrides,
+    modelFormats,
     container: resolveContainer(config.container),
     cellSize: config.cellSize ?? DEFAULT_CELL_SIZE,
     objectSize: config.objectSize ?? DEFAULT_OBJECT_SIZE,

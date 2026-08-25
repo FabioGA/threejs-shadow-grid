@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- GLTF/GLB models, mixable with STL in the same `models` list. A GLTF model keeps its own baked material(s)/textures by default - including full fidelity for multi-material models (e.g. body/wheels/glass), each rendered via its own `InstancedMesh` sharing one per-cell transform - or renders flat-colored via a new per-model `color` override (`{ model, color }`/`{ model, weight, color }`). Format is auto-detected from the URL extension or a `.glb`'s magic bytes; `format` forces it for the one case that can't be sniffed (a raw, non-`.glb`, `.gltf` `ArrayBuffer`).
+- Demo: a dev-only error-log overlay (press <kbd>E</kbd>), mirroring `console.error`/`console.warn` on-page - not shipped in the published package.
+
+### Fixed
+
+- A single model failing to load (bad URL, unsupported GLTF extension, etc.) no longer blanks the entire grid - that model's grid cells are simply left empty while every other model keeps rendering normally.
+
 ## [1.3.0] - 2026-08-24
 
 ### Changed

@@ -41,6 +41,8 @@
     "3d",
     "background",
     "stl",
+    "gltf",
+    "glb",
     "grid",
     "shadow",
     "webgl"
