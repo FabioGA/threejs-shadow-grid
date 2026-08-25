@@ -35,11 +35,15 @@ jobs:
         run: |
           set -e
           rm -rf site
-          mkdir -p site/dist site/node_modules/three/build site/node_modules/three/examples/jsm/loaders
+          mkdir -p site/dist site/node_modules/three/build site/node_modules/three/examples/jsm/loaders site/node_modules/three/examples/jsm/utils
           cp -r examples site/examples
           cp -r dist/. site/dist/
           cp node_modules/three/build/three.module.js site/node_modules/three/build/three.module.js
           cp node_modules/three/examples/jsm/loaders/STLLoader.js site/node_modules/three/examples/jsm/loaders/STLLoader.js
+          cp node_modules/three/examples/jsm/loaders/GLTFLoader.js site/node_modules/three/examples/jsm/loaders/GLTFLoader.js
+          # GLTFLoader.js's own dependency - not needed by STLLoader.js, so not
+          # already covered by the copy above.
+          cp node_modules/three/examples/jsm/utils/BufferGeometryUtils.js site/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js
 
           # examples/demo.html and examples/js/models.js use root-absolute paths
           # (correct for local dev, served from the repo root via `http-server .`)
@@ -50,6 +54,7 @@ jobs:
             -e 's#"threejs-shadow-grid": "/dist/index.js"#"threejs-shadow-grid": "../dist/index.js"#' \
             -e 's#"three": "/node_modules/three/build/three.module.js"#"three": "../node_modules/three/build/three.module.js"#' \
             -e 's#"three/examples/jsm/loaders/STLLoader.js": "/node_modules/three/examples/jsm/loaders/STLLoader.js"#"three/examples/jsm/loaders/STLLoader.js": "../node_modules/three/examples/jsm/loaders/STLLoader.js"#' \
+            -e 's#"three/examples/jsm/loaders/GLTFLoader.js": "/node_modules/three/examples/jsm/loaders/GLTFLoader.js"#"three/examples/jsm/loaders/GLTFLoader.js": "../node_modules/three/examples/jsm/loaders/GLTFLoader.js"#' \
             -e 's#src="/examples/js/playground.js"#src="js/playground.js"#' \
             site/examples/demo.html
 
