@@ -28,7 +28,6 @@ export function buildConfig(s) {
         ? s.colorPalette.map((color, i) => ({ color, weight: s.colorWeights[i] }))
         : s.colorSingle,
     backgroundColor: s.backgroundTransparent ? "transparent" : s.backgroundColor,
-    matchBackground: s.matchBackground,
     hardness: s.hardness,
     seed: s.seed,
     light: {
@@ -83,7 +82,6 @@ const grid = new ShadowGrid({
   maxInstances: ${maxInstancesCode},
   colors: ${colors},
   backgroundColor: ${backgroundColor},
-  matchBackground: ${s.matchBackground},
   hardness: ${s.hardness},
   seed: ${s.seed},
   light: {
@@ -180,7 +178,6 @@ export function applyConfigToState(config, state) {
     state.backgroundTransparent = config.backgroundColor === "transparent";
     if (!state.backgroundTransparent) state.backgroundColor = config.backgroundColor;
   }
-  if ("matchBackground" in config) state.matchBackground = config.matchBackground;
   if ("hardness" in config) state.hardness = config.hardness;
   if ("seed" in config) state.seed = config.seed;
   if (config.light) {

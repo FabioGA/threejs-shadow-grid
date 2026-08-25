@@ -72,7 +72,6 @@ bindColor("colorSingle", "colorSingle");
 renderColorPaletteRows();
 bindColor("backgroundColor", "backgroundColor");
 bindCheckbox("backgroundTransparent", "backgroundTransparent");
-bindCheckbox("matchBackground", "matchBackground");
 bindRange("hardness", "hardness", (v) => v.toFixed(2));
 bindCheckbox("shadows", "shadows");
 bindRange("maxPixelRatio", "maxPixelRatio", (v) => v.toFixed(1));
