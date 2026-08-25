@@ -7,10 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-25
+
 ### Added
 
 - GLTF/GLB models, mixable with STL in the same `models` list. A GLTF model keeps its own baked material(s)/textures by default - including full fidelity for multi-material models (e.g. body/wheels/glass), each rendered via its own `InstancedMesh` sharing one per-cell transform - or renders flat-colored via a new per-model `color` override (`{ model, color }`/`{ model, weight, color }`). Format is auto-detected from the URL extension or a `.glb`'s magic bytes; `format` forces it for the one case that can't be sniffed (a raw, non-`.glb`, `.gltf` `ArrayBuffer`).
+- `shadowDistance` config to stop objects clipping through the shadow-catching backdrop. Objects previously sat a fixed 1 world-unit in front of it, so a model whose real depth (after scale/rotation) exceeded that gap would visually clip through. Defaults to `"auto"`, sizing the gap to the deepest loaded model's bounding radius plus arrangement jitter, or can be pinned to an explicit CSS-px value.
 - Demo: a dev-only error-log overlay (press <kbd>E</kbd>), mirroring `console.error`/`console.warn` on-page - not shipped in the published package.
+
+### Changed
+
+- Demo: bumped the default shadow quality from 1024px to 2048px for crisper out-of-the-box shadows, and dropped the redundant `matchBackground` playground control since the demo already lets you set object colors manually (the library's `matchBackground` option itself is unchanged).
 
 ### Fixed
 
