@@ -156,12 +156,7 @@ describe("GridBuilder", () => {
     const mesh = scene.children[0] as THREE.InstancedMesh;
     const actual = quaternionAt(mesh, 0);
     const expected = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(
-        (rotation.x * Math.PI) / 180,
-        (rotation.y * Math.PI) / 180,
-        (rotation.z * Math.PI) / 180,
-        "ZYX"
-      )
+      new THREE.Euler((rotation.x * Math.PI) / 180, (rotation.y * Math.PI) / 180, (rotation.z * Math.PI) / 180, "ZYX")
     );
 
     expect(actual.x).toBeCloseTo(expected.x, 6);
