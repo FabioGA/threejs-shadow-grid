@@ -8,6 +8,11 @@ export const defaultState = {
   objectSize: 95,
   objectSizeMin: 85,
   objectSizeMax: 125,
+  // "auto" (default, matches the library default) sizes the backdrop
+  // distance to clear the deepest loaded model; "fixed" uses the
+  // shadowDistance number below as an explicit distance instead.
+  shadowDistanceMode: "auto",
+  shadowDistance: 150,
   arrangement: "grid",
   jitter: 0.4,
   rowOffset: -0.5,

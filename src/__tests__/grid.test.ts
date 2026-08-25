@@ -11,6 +11,7 @@ function buildConfig(overrides: Partial<ResolvedGridConfig> = {}): ResolvedGridC
     container: {} as HTMLElement,
     cellSize: 100, // PIXELS_PER_UNIT is 100, so this is exactly 1 world unit per cell
     objectSize: 80,
+    shadowDistance: "auto",
     arrangement: "grid",
     jitter: 0.4,
     rowOffset: 0,
@@ -45,12 +46,12 @@ function positionAt(mesh: THREE.InstancedMesh, index: number): THREE.Vector3 {
 
 /** A single-part model with no baked material - the STL shape (or GLTF+color-override, once GridBuilder substitutes a flat material). */
 function stlModel(geometry: THREE.BufferGeometry): LoadedModel {
-  return { parts: [{ geometry, material: null }], colorOverride: null };
+  return { parts: [{ geometry, material: null }], colorOverride: null, boundingRadius: 1 };
 }
 
 /** A single-part model carrying its own baked material - the plain-GLTF shape. */
 function gltfModel(geometry: THREE.BufferGeometry, material: THREE.Material): LoadedModel {
-  return { parts: [{ geometry, material }], colorOverride: null };
+  return { parts: [{ geometry, material }], colorOverride: null, boundingRadius: 1 };
 }
 
 describe("GridBuilder", () => {
@@ -193,6 +194,7 @@ describe("GridBuilder", () => {
             { geometry: wheelGeometry, material: wheelMaterial },
           ],
           colorOverride: null,
+          boundingRadius: 1,
         },
       ]);
 
@@ -222,7 +224,11 @@ describe("GridBuilder", () => {
       const builder = new GridBuilder(scene);
       const bakedMaterial = new THREE.MeshStandardMaterial({ color: "#ff0000" });
       builder.setModels([
-        { parts: [{ geometry: new THREE.BoxGeometry(1, 1, 1), material: bakedMaterial }], colorOverride: "#00ff00" },
+        {
+          parts: [{ geometry: new THREE.BoxGeometry(1, 1, 1), material: bakedMaterial }],
+          colorOverride: "#00ff00",
+          boundingRadius: 1,
+        },
       ]);
 
       builder.rebuild(4, 2, buildConfig());
@@ -250,7 +256,7 @@ describe("GridBuilder", () => {
       const builder = new GridBuilder(scene);
       builder.setModels([
         stlModel(new THREE.BoxGeometry(1, 1, 1)),
-        { parts: [], colorOverride: null }, // stands in for a model that failed to load
+        { parts: [], colorOverride: null, boundingRadius: 0 }, // stands in for a model that failed to load
       ]);
 
       builder.rebuild(

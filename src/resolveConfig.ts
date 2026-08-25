@@ -27,14 +27,18 @@ import {
   DEFAULT_ROTATION,
   DEFAULT_ROW_OFFSET,
   DEFAULT_SEED,
+  DEFAULT_SHADOW_DISTANCE,
   DEFAULT_SHADOWS,
   LIGHT_STYLE_PRESETS,
   MAX_CURSOR_HEIGHT,
   MAX_INSTANCES_SAFETY_CEILING,
+  MAX_SHADOW_DISTANCE,
   MAX_SHADOW_MAP_SIZE,
   MIN_CURSOR_HEIGHT,
+  MIN_SHADOW_DISTANCE,
   MIN_SHADOW_MAP_SIZE,
   PIXELS_PER_UNIT,
+  SHADOW_DISTANCE_AUTO_CLEARANCE,
 } from "./defaults";
 
 function resolveContainer(container: HTMLElement | string): HTMLElement {
@@ -127,6 +131,29 @@ export function maxObjectSize(objectSize: SizeConfig): number {
   return typeof objectSize === "number" ? objectSize : objectSize.max;
 }
 
+/**
+ * Resolves `GridConfig.shadowDistance` to a concrete world-unit distance
+ * from the grid plane to the backdrop. Not called from resolveConfig() -
+ * `maxModelRadiusUnits` is only known once a model has loaded, so
+ * `ShadowGrid` calls this directly after `loadModels()` resolves, and again
+ * on any config change that affects its inputs (`shadowDistance` itself, or
+ * - in "auto" mode - `cellSize`/`jitter`/`arrangement`). See
+ * `ShadowGrid.applyShadowDistance()`.
+ */
+export function resolveShadowDistance(
+  shadowDistance: number | "auto",
+  maxModelRadiusUnits: number,
+  zJitterUnits: number
+): number {
+  const minUnits = MIN_SHADOW_DISTANCE / PIXELS_PER_UNIT;
+  const maxUnits = MAX_SHADOW_DISTANCE / PIXELS_PER_UNIT;
+  const raw =
+    shadowDistance === "auto"
+      ? maxModelRadiusUnits + zJitterUnits + SHADOW_DISTANCE_AUTO_CLEARANCE / PIXELS_PER_UNIT
+      : shadowDistance / PIXELS_PER_UNIT;
+  return Math.min(maxUnits, Math.max(minUnits, raw));
+}
+
 export function resolveConfig(config: GridConfig): ResolvedGridConfig {
   if (!config.models || (Array.isArray(config.models) && config.models.length === 0)) {
     throw new Error("[threejs-shadow-grid] config.models is required (an STL/GLTF/GLB URL, or an array of them).");
@@ -144,6 +171,7 @@ export function resolveConfig(config: GridConfig): ResolvedGridConfig {
     container: resolveContainer(config.container),
     cellSize: config.cellSize ?? DEFAULT_CELL_SIZE,
     objectSize: config.objectSize ?? DEFAULT_OBJECT_SIZE,
+    shadowDistance: config.shadowDistance ?? DEFAULT_SHADOW_DISTANCE,
     arrangement: config.arrangement ?? DEFAULT_ARRANGEMENT,
     jitter: config.jitter ?? DEFAULT_JITTER,
     rowOffset: config.rowOffset ?? DEFAULT_ROW_OFFSET,

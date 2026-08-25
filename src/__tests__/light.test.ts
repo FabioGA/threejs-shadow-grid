@@ -57,7 +57,30 @@ describe("LightRig", () => {
     expect(cam.right).toBeCloseTo(5 + margin, 10);
     expect(cam.top).toBeCloseTo(3 + margin, 10);
     expect(cam.bottom).toBeCloseTo(-3 - margin, 10);
-    expect(cam.far).toBeCloseTo(LIGHT_STYLE_PRESETS.medium.distance * 3 + 20, 10);
+    expect(cam.far).toBeCloseTo(LIGHT_STYLE_PRESETS.medium.distance * 3 + 20 + 1, 10); // +1: default backdropDistanceUnits
+  });
+
+  it("setBackdropDistance() shifts the sun light's shadow camera far plane", () => {
+    const rig = makeRig(buildLightConfig({ style: "medium" }));
+    rig.setShadowBounds(5, 3);
+    rig.setBackdropDistance(12);
+    const cam = rig.key.shadow.camera as THREE.OrthographicCamera;
+    expect(cam.far).toBeCloseTo(LIGHT_STYLE_PRESETS.medium.distance * 3 + 20 + 12, 10);
+  });
+
+  it("setBackdropDistance() shifts the cursor light's shadow camera far plane", () => {
+    const rig = makeRig(buildLightConfig({ style: "medium", type: "cursor" }));
+    rig.setShadowBounds(5, 3);
+    const cam = rig.key.shadow.camera as THREE.PerspectiveCamera;
+    const farAtDefault = cam.far;
+
+    rig.setBackdropDistance(50);
+    expect(cam.far).toBeGreaterThan(farAtDefault);
+  });
+
+  it("setBackdropDistance() before any setShadowBounds() call does not throw", () => {
+    const rig = makeRig(buildLightConfig({ style: "medium" }));
+    expect(() => rig.setBackdropDistance(5)).not.toThrow();
   });
 
   it("auto-sweeps continuously before any pointer activity in 'auto' mode", () => {

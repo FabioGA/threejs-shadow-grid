@@ -104,6 +104,15 @@ describe("loadModels - STL", () => {
     expect(center.length()).toBeCloseTo(0, 4);
   });
 
+  it("computes boundingRadius as half the normalized bounding box's diagonal", async () => {
+    const buffer = makeBinaryStl([0, 0, 0], [6, 0, 0], [0, 8, 0]);
+    const [{ parts, boundingRadius }] = await loadModels([stlRequest(buffer)], 10);
+
+    const size = new THREE.Vector3();
+    parts[0].geometry.boundingBox!.getSize(size);
+    expect(boundingRadius).toBeCloseTo(size.length() / 2, 4);
+  });
+
   it("does not cache ArrayBuffer sources by reference (avoids retaining every uploaded model forever)", async () => {
     const parseSpy = vi.spyOn(STLLoader.prototype, "parse");
     const buffer = makeBinaryStl([0, 0, 0], [2, 0, 0], [0, 2, 0]);
@@ -165,7 +174,7 @@ describe("loadModels - GLTF", () => {
     scene.add(left, right);
 
     const glb = await exportGlb(scene);
-    const [{ parts }] = await loadModels([stlRequest(glb, { format: "gltf" })], 11);
+    const [{ parts, boundingRadius }] = await loadModels([stlRequest(glb, { format: "gltf" })], 11);
 
     const combinedBox = new THREE.Box3();
     for (const part of parts) {
@@ -175,6 +184,9 @@ describe("loadModels - GLTF", () => {
     const size = new THREE.Vector3();
     combinedBox.getSize(size);
     expect(Math.max(size.x, size.y, size.z)).toBeCloseTo(11, 3);
+
+    // boundingRadius circumscribes the *combined* model (both parts), not just one part's own local extent.
+    expect(boundingRadius).toBeCloseTo(size.length() / 2, 3);
 
     // The two parts' centers should still be ~10 (scale 1:1 here since target size == source size).
     const centerOf = (geometry: THREE.BufferGeometry) => {
@@ -193,9 +205,10 @@ describe("loadModels - GLTF", () => {
     scene.add(new THREE.Object3D()); // no meshes, just an empty node
     const glb = await exportGlb(scene);
 
-    const [{ parts }] = await loadModels([stlRequest(glb, { format: "gltf" })], 10);
+    const [{ parts, boundingRadius }] = await loadModels([stlRequest(glb, { format: "gltf" })], 10);
 
     expect(parts).toEqual([]);
+    expect(boundingRadius).toBe(0);
     expect(errorSpy).toHaveBeenCalledTimes(1);
     const loggedError = errorSpy.mock.calls[0][0];
     expect(loggedError).toBeInstanceOf(Error);
@@ -214,6 +227,7 @@ describe("loadModels - GLTF", () => {
 
     expect(good.parts).toHaveLength(1);
     expect(bad.parts).toEqual([]);
+    expect(bad.boundingRadius).toBe(0);
     expect(errorSpy).toHaveBeenCalledTimes(1);
     errorSpy.mockRestore();
   });

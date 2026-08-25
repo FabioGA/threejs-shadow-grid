@@ -143,6 +143,15 @@ export interface GridConfig {
   cellSize?: number;
   /** Target on-screen size (largest bounding-box dimension), in CSS pixels. `{ min, max }` randomizes per object. Default: 120. */
   objectSize?: SizeConfig;
+  /**
+   * Distance from the grid plane (z=0) to the backdrop that catches the
+   * cast shadow, in CSS pixels. `"auto"` (default) sizes it to clear the
+   * deepest loaded model - across any rotation - plus arrangement jitter,
+   * so objects never visually clip through the backdrop. Pass a number to
+   * pin an exact distance instead; too small a value can let objects clip
+   * through the backdrop, which may be an intentional stylized choice.
+   */
+  shadowDistance?: number | "auto";
   /** "grid" = aligned rows/columns. "random" = jittered position per cell. Default: "grid". */
   arrangement?: Arrangement;
   /** 0-1 amount of position jitter applied when arrangement is "random". Default: 0.4. */

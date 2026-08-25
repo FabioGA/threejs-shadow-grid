@@ -35,6 +35,10 @@ bindSelect("objectSizeMode", "objectSizeMode", (v) =>
 bindRange("objectSize", "objectSize", (v) => `${v}px`);
 bindRange("objectSizeMin", "objectSizeMin", (v) => `${v}px`);
 bindRange("objectSizeMax", "objectSizeMax", (v) => `${v}px`);
+bindSelect("shadowDistanceMode", "shadowDistanceMode", (v) =>
+  document.getElementById("shadowDistance-fixed-group").classList.toggle("active", v === "fixed")
+);
+bindRange("shadowDistance", "shadowDistance", (v) => `${v}px`);
 bindSelect("arrangement", "arrangement");
 bindRange("jitter", "jitter", (v) => v.toFixed(2));
 bindRange("rowOffset", "rowOffset", (v) => v.toFixed(2));
@@ -113,6 +117,9 @@ function syncControlsFromState() {
     document.getElementById(id).value = state.modelWeights[i];
   });
   toggleSubgroup(state.objectSizeMode, "fixed", "objectSize-fixed-group", "objectSize-range-group");
+  document
+    .getElementById("shadowDistance-fixed-group")
+    .classList.toggle("active", state.shadowDistanceMode === "fixed");
   document.getElementById("maxInstances-fixed-group").classList.toggle("active", state.maxInstancesMode === "fixed");
   ["X", "Y", "Z"].forEach((axis) => {
     document

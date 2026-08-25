@@ -75,6 +75,20 @@
                 </div>
               </div>
               <div class="field">
+                <label for="shadowDistanceMode">shadowDistance</label>
+                <select id="shadowDistanceMode">
+                  <option value="auto" selected>auto (clear the model)</option>
+                  <option value="fixed">fixed</option>
+                </select>
+              </div>
+              <div class="subgroup" id="shadowDistance-fixed-group">
+                <div class="field">
+                  <label for="shadowDistance">distance</label>
+                  <input type="range" id="shadowDistance" min="20" max="1000" step="10" value="150" />
+                  <span class="val" id="shadowDistance-val">150px</span>
+                </div>
+              </div>
+              <div class="field">
                 <label for="arrangement">arrangement</label>
                 <select id="arrangement">
                   <option value="grid" selected>grid</option>
